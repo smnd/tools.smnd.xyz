@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/qr-config.schema.json",
+  "title": "QR Configuration Schema",
+  "description": "Configuration for composing EMVCo MPM payment QR payloads and rendering QR images.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "poiMethod": {
+      "type": "string",
+      "enum": ["11", "12"],
+      "default": "11",
+      "description": "Point of Initiation method: 11=static, 12=dynamic."
+    },
+    "common": {
+      "type": "object",
+      "description": "Root TLV tags at top level (e.g., 52–60). Keys are two-digit strings; values are UTF-8 strings.",
+      "propertyNames": { "pattern": "^[0-9]{2}$" },
+      "additionalProperties": { "type": "string" },
+      "properties": {
+        "52": { "type": "string", "description": "Merchant Category Code (MCC)." },
+        "53": { "type": "string", "pattern": "^[0-9]{3}$", "description": "Transaction currency (ISO 4217 numeric)." },
+        "54": { "type": "string", "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d{1,2})?$", "description": "Transaction amount (decimal)." },
+        "55": { "type": "string", "description": "Tip or convenience indicator/amount (scheme-specific)." },
+        "58": { "type": "string", "pattern": "^[A-Z]{2}$", "description": "Country code (ISO 3166-1 alpha-2)." },
+        "59": { "type": "string", "description": "Merchant name." },
+        "60": { "type": "string", "description": "Merchant city." }
+      }
+    },
+    "additionalData62": {
+      "type": "array",
+      "description": "Additional Data Field Template (Tag 62) as ordered list of sub-tags.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "value"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[0-9]{2}$", "description": "Two-digit sub-tag ID (00–99)." },
+          "value": { "type": "string", "description": "Value as UTF-8 string (or hex in hex mode)." }
+        }
+      },
+      "default": []
+    },
+    "schemes": {
+      "type": "array",
+      "description": "Merchant Account Information containers (tags 26–51). Order is preserved.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "tags"],
+        "properties": {
+          "id": { "type": "integer", "minimum": 26, "maximum": 51, "description": "Container tag number (26–51)." },
+          "label": { "type": "string", "minLength": 1, "description": "Human-readable scheme label (e.g., PayNow, DuitNow, UPI)." },
+          "tags": {
+            "type": "array",
+            "description": "Ordered sub-tags within this MAI (require AID at id=\"00\").",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "value"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^[0-9]{2}$", "description": "Two-digit sub-tag ID (00–99)." },
+                "value": { "type": "string", "description": "Value as UTF-8 string (or hex in hex mode)." },
+                "note": { "type": "string", "description": "Optional comment for documentation." }
+              }
+            },
+            "default": [],
+            "contains": { "type": "object", "properties": { "id": { "const": "00" } }, "required": ["id"] },
+            "minContains": 1
+          }
+        }
+      },
+      "default": []
+    },
+    "qr": {
+      "type": "object",
+      "description": "QR rendering options.",
+      "additionalProperties": false,
+      "properties": {
+        "ecc": { "type": "string", "enum": ["L", "M", "Q", "H"], "default": "M", "description": "Error correction level." },
+        "moduleSize": { "type": "integer", "minimum": 1, "maximum": 64, "default": 8, "description": "Pixels per module for PNG export." },
+        "color": { "type": "string", "default": "#000000", "description": "Foreground color (CSS color)." },
+        "bgColor": { "type": "string", "default": "#FFFFFF", "description": "Background color (CSS color)." }
+      },
+      "default": { "ecc": "M", "moduleSize": 8, "color": "#000000", "bgColor": "#FFFFFF" }
+    }
+  },
+  "required": ["poiMethod"],
+  "examples": [
+    {
+      "poiMethod": "11",
+      "common": { "53": "702", "58": "SG", "59": "EXAMPLE SHOP", "60": "SINGAPORE" },
+      "additionalData62": [ { "id": "01", "value": "INV123" } ],
+      "schemes": [
+        {
+          "id": 26,
+          "label": "PayNow",
+          "tags": [
+            { "id": "00", "value": "A000000677010112" },
+            { "id": "01", "value": "+6591234567" }
+          ]
+        }
+      ],
+      "qr": { "ecc": "M", "moduleSize": 8, "color": "#000000", "bgColor": "#FFFFFF" }
+    }
+  ]
+}
+
