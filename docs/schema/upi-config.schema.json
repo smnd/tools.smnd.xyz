@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/upi-config.schema.json",
+  "title": "UPI Configuration Schema",
+  "description": "Configuration for composing UPI payment URIs.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "pa": { "type": "string", "minLength": 3, "description": "Payee VPA (e.g., merchant@bank)" },
+    "pn": { "type": "string", "description": "Payee name" },
+    "am": { "type": "string", "pattern": "^(?:0|[1-9]\\d*)(?:\\.\\d{1,2})?$", "description": "Amount" },
+    "cu": { "type": "string", "default": "INR", "description": "Currency, default INR" },
+    "tn": { "type": "string", "description": "Transaction note" },
+    "tr": { "type": "string", "description": "Transaction reference" }
+  },
+  "required": ["pa"],
+  "examples": [
+    { "pa": "merchant@upi", "pn": "Example Store", "am": "10.00", "cu": "INR", "tn": "Order 123" }
+  ]
+}
+
