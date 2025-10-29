@@ -34,7 +34,7 @@ export const SGQR_SCHEMES: SchemeDef[] = [
           { value: '1', label: '1: can be edited' }
         ]
        },
-      { id: '04', name: 'QR Expiry Date' },
+      { id: '04', name: 'QR expiry date' },
       { id: '05', name: 'Merchant reference number' }
     ],
   },

@@ -5,6 +5,7 @@ import { exportEmvco, importEmvco } from '../../lib/persistence'
 import { getSchemeByKey } from '../../schemes/sgqr'
 import { SGQR_SCHEMES } from '../../schemes/sgqr'
 import { useState, useMemo } from 'react'
+import { MSG } from '../../strings/messages'
 
 export function EmvcoRoot() {
   const emvco = useConfigStore(s => s.emvco)
@@ -79,7 +80,10 @@ export function EmvcoRoot() {
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium">Amount (54)</span>
-          <input className="border rounded-md p-2" placeholder="e.g. 10.00" value={emvco.common?.['54'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '54': e.target.value } })} />
+          <div className="flex flex-col gap-1">
+            <input className="border rounded-md p-2" placeholder="e.g. 10.00" value={emvco.common?.['54'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '54': e.target.value } })} />
+            {amountError(emvco) && <span className="text-xs text-red-600">{amountError(emvco)}</span>}
+          </div>
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium">Tip/Convenience (55)</span>
@@ -133,18 +137,27 @@ export function EmvcoRoot() {
                 const subDef = schemeDef?.subTags.find(d => d.id === t.id)
                 const isConst = !!subDef?.constValue
                 const subName = subDef?.name
+                const inlineError = subTagError(emvco.poiMethod, emvco.common?.['54'] ?? '', s.schemeKey, t.id, t.value, s)
                 return (
                   <div key={ti} className="grid grid-cols-[80px_1fr_200px_auto] gap-2 items-center mb-2">
                     <input className="border rounded-md p-1" value={t.id} disabled />
-                    {subDef?.options && !isConst ? (
-                      <select className="border rounded-md p-2" value={t.value} onChange={(e) => updateSchemeTag(i, ti, { value: e.target.value })}>
-                        {subDef.options.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input className="border rounded-md p-1" value={t.value} onChange={(e) => updateSchemeTag(i, ti, { value: e.target.value })} disabled={isConst} />
-                    )}
+                    <div className="flex flex-col gap-1">
+                      {subDef?.options && !isConst ? (
+                        <select className="border rounded-md p-2" value={t.value} onChange={(e) => updateSchemeTag(i, ti, { value: e.target.value })}>
+                          {subDef.options.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      ) : subDef?.id === '04' && s.schemeKey === 'paynow' ? (
+                        <DateTimeValue value={t.value} onChange={(val) => updateSchemeTag(i, ti, { value: val })} />
+                      ) : (
+                        <input className="border rounded-md p-1" value={t.value} onChange={(e) => updateSchemeTag(i, ti, { value: e.target.value })} disabled={isConst} />
+                      )}
+                      {t.id !== '03' && inlineError && <span className="text-xs text-red-600">{inlineError}</span>}
+                      {s.schemeKey === 'paynow' && t.id === '03' && (
+                        <EditableAmountNote poi={emvco.poiMethod} amount={emvco.common?.['54'] ?? ''} value={t.value} />
+                      )}
+                    </div>
                     <span className="text-xs text-neutral-600">{subName ?? ''}</span>
                     <div className="flex gap-1">
                       <Button variant="outline" onClick={() => removeSchemeTag(i, ti)} disabled={(!!s.schemeKey && (t.id === '00' || !!subDef?.required))}>Remove</Button>
@@ -221,4 +234,105 @@ function nextSubTagId(tags: { id: string }[]): string {
   const max = tags.reduce((acc, t) => Math.max(acc, parseInt(t.id, 10) || 0), -1)
   const next = Math.min(99, Math.max(0, max + 1))
   return next.toString().padStart(2, '0')
+}
+
+function amountError(emvco: any): string | undefined {
+  const poi = emvco?.poiMethod
+  const amount = (emvco?.common?.['54'] ?? '').trim()
+  const amountNum = amount === '' ? 0 : Number(amount)
+  if (poi === '12' && (!amount || !isFinite(amountNum) || amountNum <= 0)) {
+    return MSG.amountRequiredForDynamic
+  }
+  return undefined
+}
+
+function subTagError(poi: '11' | '12', amountStr: string, schemeKey: string | undefined, id: string, value: string, scheme: { tags: { id: string; value: string }[] }): string | undefined {
+  if (schemeKey !== 'paynow') return undefined
+  const amountTrim = (amountStr ?? '').trim()
+  const amountNum = amountTrim === '' ? 0 : Number(amountTrim)
+  const v01 = scheme.tags.find(t => t.id === '01')?.value ?? ''
+  if (id === '02') {
+    if (v01 === '0' && value && !value.startsWith('+')) {
+      return MSG.paynow02MustStartPlusWhenMobile
+    }
+  }
+  if (id === '03') {
+    if (poi === '12' && value !== '0') {
+      return MSG.paynow03MustBeZeroWhenDynamic
+    }
+    if (poi !== '12' && (amountTrim === '' || !isFinite(amountNum) || amountNum === 0) && value === '0') {
+      return MSG.paynow03CannotBeZeroWhenNoAmount
+    }
+  }
+  return undefined
+}
+
+function parseDateTimeValue(v: string | undefined): { date: string; time: string } {
+  const val = (v ?? '').trim()
+  if (val.length >= 8) {
+    const y = val.slice(0, 4)
+    const m = val.slice(4, 6)
+    const d = val.slice(6, 8)
+    const date = `${y}-${m}-${d}`
+    if (val.length >= 14) {
+      const hh = val.slice(8, 10)
+      const mm = val.slice(10, 12)
+      const ss = val.slice(12, 14)
+      const time = `${hh}:${mm}:${ss}`
+      return { date, time }
+    }
+    return { date, time: '' }
+  }
+  return { date: '', time: '' }
+}
+
+function toCompactDate(date: string): string | null {
+  if (!date) return null
+  const parts = date.split('-')
+  if (parts.length !== 3) return null
+  return parts.join('')
+}
+
+function timeToHHmmss(time: string): string | null {
+  if (!time) return null
+  const parts = time.split(':')
+  if (parts.length < 2) return null
+  const hh = parts[0]?.padStart(2, '0') ?? '00'
+  const mm = parts[1]?.padStart(2, '0') ?? '00'
+  const ss = (parts[2] ?? '00').padStart(2, '0')
+  return `${hh}${mm}${ss}`
+}
+
+function composeDateTime(date: string, time: string): string {
+  const ymd = toCompactDate(date)
+  if (!ymd) return ''
+  const hhmmss = time ? (timeToHHmmss(time) ?? '000000') : '235959'
+  return `${ymd}${hhmmss}`
+}
+
+function DateTimeValue({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const { date, time } = parseDateTimeValue(value)
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex gap-2 items-center">
+        <input type="date" className="border rounded-md p-1" value={date} onChange={(e) => onChange(composeDateTime(e.target.value, time))} />
+        <input type="time" step={1} className="border rounded-md p-1" value={time} onChange={(e) => onChange(composeDateTime(date, e.target.value))} />
+        <button type="button" className="border rounded-md px-2 py-1 text-sm bg-white hover:bg-neutral-50" onClick={() => onChange('')}>Clear</button>
+      </div>
+      <input className="border rounded-md p-1 font-mono" readOnly placeholder="YYYYMMDDHHmmss" value={value} />
+    </div>
+  )
+}
+
+function EditableAmountNote({ poi, amount, value }: { poi: '11' | '12'; amount: string; value: string }) {
+  const amtTrim = (amount ?? '').trim()
+  const amtNum = amtTrim === '' ? 0 : Number(amtTrim)
+  const vDynamic = poi === '12' && value !== '0'
+  const vEmptyAmt = poi !== '12' && (amtTrim === '' || !isFinite(amtNum) || amtNum === 0) && value === '0'
+  return (
+    <div className="text-xs">
+      <div className={vDynamic ? 'text-red-600' : 'text-neutral-600'}>{MSG.paynow03MustBeZeroWhenDynamic}</div>
+      <div className={vEmptyAmt ? 'text-red-600' : 'text-neutral-600'}>{MSG.paynow03CannotBeZeroWhenNoAmount}</div>
+    </div>
+  )
 }
