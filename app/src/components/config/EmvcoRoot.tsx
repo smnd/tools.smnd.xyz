@@ -6,21 +6,24 @@ import { getSchemeByKey } from '../../schemes/sgqr'
 import { SGQR_SCHEMES } from '../../schemes/sgqr'
 import { useState, useMemo } from 'react'
 import { MSG } from '../../strings/messages'
+import { Input } from '../ui/input'
+import { Select } from '../ui/select'
+import { Label } from '../ui/label'
 
 export function EmvcoRoot() {
   const emvco = useConfigStore(s => s.emvco)
   const setEmvco = useConfigStore(s => s.setEmvco)
   const addScheme = useConfigStore(s => s.addScheme)
   const removeScheme = useConfigStore(s => s.removeScheme)
-  const updateScheme = useConfigStore(s => s.updateScheme)
+  // const updateScheme = useConfigStore(s => s.updateScheme)
   const addSchemeTag = useConfigStore(s => s.addSchemeTag)
   const updateSchemeTag = useConfigStore(s => s.updateSchemeTag)
   const removeSchemeTag = useConfigStore(s => s.removeSchemeTag)
   const addTag62 = useConfigStore(s => s.addTag62)
   const updateTag62 = useConfigStore(s => s.updateTag62)
   const removeTag62 = useConfigStore(s => s.removeTag62)
-  const moveTag62 = useConfigStore(s => s.moveTag62)
-  const loadPreset = useConfigStore(s => s.loadPreset)
+  // const moveTag62 = useConfigStore(s => s.moveTag62)
+  // const loadPreset = useConfigStore(s => s.loadPreset)
 
   const issues = validateBasicEmvco(emvco)
   const [addSel, setAddSel] = useState<string>('')
@@ -39,18 +42,17 @@ export function EmvcoRoot() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold">EMVCo Configuration</h2>
+      <div className="flex items-center justify-between pb-2">
+        <div>
+          <h2 className="text-base font-semibold">EMVCo Configuration</h2>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">SGQR / PayNow builder</p>
+        </div>
         <div className="flex items-center gap-2">
-          <label className="text-sm">Preset:</label>
-          <select className="border rounded-md p-2" onChange={(e) => loadPreset(e.target.value as any)} defaultValue="paynow">
-            <option value="blank">Blank</option>
-            <option value="paynow">SGQR/PayNow</option>
-            <option value="duitnow">DuitNow</option>
-          </select>
-          <Button variant="outline" onClick={() => exportEmvco(emvco)}>Export JSON</Button>
-          <label className="text-sm border rounded-md px-3 py-2 cursor-pointer bg-white hover:bg-neutral-50">
-            Import JSON
+          <button className="h-9 w-9 inline-flex items-center justify-center rounded-md border bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:text-neutral-100" onClick={() => exportEmvco(emvco)} aria-label="Export" title="Export JSON">
+            <span className="material-symbols-outlined">download</span>
+          </button>
+          <label className="h-9 w-9 inline-flex items-center justify-center rounded-md border bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:text-neutral-100 cursor-pointer" aria-label="Import" title="Import JSON">
+            <span className="material-symbols-outlined">upload</span>
             <input type="file" accept="application/json" className="hidden" onChange={async (e) => {
               const file = e.target.files?.[0]
               if (!file) return
@@ -63,50 +65,58 @@ export function EmvcoRoot() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Point of Initiation (01)</span>
-          <select className="border rounded-md p-2" value={emvco.poiMethod} onChange={(e) => setEmvco({ poiMethod: e.target.value as '11' | '12' })}>
+        <div className="flex flex-col gap-2 pb-2">
+          <Label className="text-sm font-semibold">Point of Initiation (01)</Label>
+          <div className="text-xs font-mono text-neutral-500 dark:text-neutral-400">{tlvPreview('01', emvco.poiMethod)}</div>
+          <Select value={emvco.poiMethod} onChange={(e) => setEmvco({ poiMethod: e.target.value as '11' | '12' })}>
             <option value="11">11 - Static</option>
             <option value="12">12 - Dynamic</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">MCC (52)</span>
-          <input className="border rounded-md p-2" placeholder="e.g. 5399" value={emvco.common?.['52'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '52': e.target.value } })} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Currency (53)</span>
-          <input className="border rounded-md p-2" placeholder="ISO 4217 numeric" value={emvco.common?.['53'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '53': e.target.value } })} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Amount (54)</span>
-          <div className="flex flex-col gap-1">
-            <input className="border rounded-md p-2" placeholder="e.g. 10.00" value={emvco.common?.['54'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '54': e.target.value } })} />
+          </Select>
+        </div>
+        <div className="flex flex-col gap-2 pb-2">
+          <Label className="text-sm font-semibold">MCC (52)</Label>
+          <div className="text-xs font-mono text-neutral-500 dark:text-neutral-400">{tlvPreview('52', emvco.common?.['52'] ?? '')}</div>
+          <Input placeholder="e.g. 5399" value={emvco.common?.['52'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '52': e.target.value } })} />
+        </div>
+        <div className="flex flex-col gap-2 pb-2">
+          <Label className="text-sm font-semibold">Currency (53)</Label>
+          <div className="text-xs font-mono text-neutral-500 dark:text-neutral-400">{tlvPreview('53', emvco.common?.['53'] ?? '')}</div>
+          <Input placeholder="ISO 4217 numeric" value={emvco.common?.['53'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '53': e.target.value } })} />
+        </div>
+        <div className="flex flex-col gap-2 pb-2">
+          <Label className="text-sm font-semibold">Amount (54)</Label>
+          <div className="text-xs font-mono text-neutral-500 dark:text-neutral-400">{tlvPreview('54', emvco.common?.['54'] ?? '')}</div>
+          <div className="flex flex-col gap-2">
+            <Input placeholder="e.g. 10.00" value={emvco.common?.['54'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '54': e.target.value } })} />
             {amountError(emvco) && <span className="text-xs text-red-600">{amountError(emvco)}</span>}
           </div>
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Tip/Convenience (55)</span>
-          <input className="border rounded-md p-2" value={emvco.common?.['55'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '55': e.target.value } })} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Country (58)</span>
-          <input className="border rounded-md p-2" placeholder="SG, MY, ..." value={emvco.common?.['58'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '58': e.target.value } })} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Merchant Name (59)</span>
-          <input className="border rounded-md p-2" value={emvco.common?.['59'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '59': e.target.value } })} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">City (60)</span>
-          <input className="border rounded-md p-2" value={emvco.common?.['60'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '60': e.target.value } })} />
-        </label>
+        </div>
+        <div className="flex flex-col gap-2 pb-2">
+          <Label className="text-sm font-semibold">Tip/Convenience (55)</Label>
+          <div className="text-xs font-mono text-neutral-500 dark:text-neutral-400">{tlvPreview('55', emvco.common?.['55'] ?? '')}</div>
+          <Input value={emvco.common?.['55'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '55': e.target.value } })} />
+        </div>
+        <div className="flex flex-col gap-2 pb-2">
+          <Label className="text-sm font-semibold">Country (58)</Label>
+          <div className="text-xs font-mono text-neutral-500 dark:text-neutral-400">{tlvPreview('58', emvco.common?.['58'] ?? '')}</div>
+          <Input placeholder="SG, MY, ..." value={emvco.common?.['58'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '58': e.target.value } })} />
+        </div>
+        <div className="flex flex-col gap-2 pb-2">
+          <Label className="text-sm font-semibold">Merchant Name (59)</Label>
+          <div className="text-xs font-mono text-neutral-500 dark:text-neutral-400">{tlvPreview('59', emvco.common?.['59'] ?? '')}</div>
+          <Input value={emvco.common?.['59'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '59': e.target.value } })} />
+        </div>
+        <div className="flex flex-col gap-2 pb-2">
+          <Label className="text-sm font-semibold">City (60)</Label>
+          <div className="text-xs font-mono text-neutral-500 dark:text-neutral-400">{tlvPreview('60', emvco.common?.['60'] ?? '')}</div>
+          <Input value={emvco.common?.['60'] ?? ''} onChange={(e) => setEmvco({ common: { ...emvco.common, '60': e.target.value } })} />
+        </div>
       </div>
 
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">Merchant Account Info (26–51)</h3>
         <div className="flex gap-2 items-center">
-          <select className="border rounded-md p-2" value={addSel} onChange={(e) => setAddSel(e.target.value)}>
+          <select className="border rounded-md p-2 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-50" value={addSel} onChange={(e) => setAddSel(e.target.value)}>
             <option value="">Add scheme…</option>
             {SGQR_SCHEMES.map(def => (
               <option key={def.key} value={def.key} disabled={usedKeys.has(def.key)}>{def.label}</option>
@@ -122,13 +132,18 @@ export function EmvcoRoot() {
       <div className="flex flex-col gap-4">
         {(emvco.schemes ?? []).map((s, i) => (
           <div key={i} className="border rounded-md p-3">
-            <div className="flex items-center gap-2">
-              <label className="text-sm">Tag</label>
-              <input className="border rounded-md p-1 w-16" value={s.id} onChange={(e) => updateScheme(i, { id: clamp26to51(parseInt(e.target.value || '0', 10)) })} disabled={!!s.schemeKey} />
-              <input className="border rounded-md p-1 flex-1" placeholder="Label" value={s.label} onChange={(e) => updateScheme(i, { label: e.target.value })} disabled={!!s.schemeKey} />
-              <div className="ml-auto flex gap-2">
-                <Button variant="outline" onClick={() => removeScheme(i)}>Remove</Button>
+            <div className="flex items-center justify-between text-sm pb-2">
+              <div className="flex-1">
+                <div className="font-semibold">{s.label}</div>
+                <div className="text-xs text-neutral-500 dark:text-neutral-400">Container {s.id}</div>
               </div>
+              <button
+                className="p-1.5 text-red-600 hover:text-red-700 focus-visible:outline-none"
+                onClick={() => removeScheme(i)}
+                aria-label="Delete scheme"
+              >
+                <span className="material-symbols-outlined text-[16px]">delete</span>
+              </button>
             </div>
             <div className="mt-3">
               <h4 className="text-sm font-medium mb-2">Sub-tags</h4>
@@ -139,29 +154,34 @@ export function EmvcoRoot() {
                 const subName = subDef?.name
                 const inlineError = subTagError(emvco.poiMethod, emvco.common?.['54'] ?? '', s.schemeKey, t.id, t.value, s)
                 return (
-                  <div key={ti} className="grid grid-cols-[80px_1fr_200px_auto] gap-2 items-center mb-2">
-                    <input className="border rounded-md p-1" value={t.id} disabled />
-                    <div className="flex flex-col gap-1">
-                      {subDef?.options && !isConst ? (
-                        <select className="border rounded-md p-2" value={t.value} onChange={(e) => updateSchemeTag(i, ti, { value: e.target.value })}>
-                          {subDef.options.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
-                      ) : subDef?.id === '04' && s.schemeKey === 'paynow' ? (
-                        <DateTimeValue value={t.value} onChange={(val) => updateSchemeTag(i, ti, { value: val })} />
-                      ) : (
-                        <input className="border rounded-md p-1" value={t.value} onChange={(e) => updateSchemeTag(i, ti, { value: e.target.value })} disabled={isConst} />
-                      )}
-                      {t.id !== '03' && inlineError && <span className="text-xs text-red-600">{inlineError}</span>}
-                      {s.schemeKey === 'paynow' && t.id === '03' && (
-                        <EditableAmountNote poi={emvco.poiMethod} amount={emvco.common?.['54'] ?? ''} value={t.value} />
-                      )}
+                  <div key={ti} className="flex flex-col gap-2 pb-2 mb-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="font-semibold">{subName ?? `Tag ${t.id}`}</div>
+                      <button
+                        className="p-1.5 text-red-600 hover:text-red-700 focus-visible:outline-none disabled:opacity-50"
+                        onClick={() => removeSchemeTag(i, ti)}
+                        disabled={(!!s.schemeKey && (t.id === '00' || !!subDef?.required))}
+                        aria-label="Delete sub-tag"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
                     </div>
-                    <span className="text-xs text-neutral-600">{subName ?? ''}</span>
-                    <div className="flex gap-1">
-                      <Button variant="outline" onClick={() => removeSchemeTag(i, ti)} disabled={(!!s.schemeKey && (t.id === '00' || !!subDef?.required))}>Remove</Button>
-                    </div>
+                    <div className="text-xs font-mono text-neutral-500 dark:text-neutral-400">{tlvPreview(t.id, t.value)}</div>
+                    {subDef?.options && !isConst ? (
+                      <Select value={t.value} onChange={(e) => updateSchemeTag(i, ti, { value: e.target.value })}>
+                        {subDef.options.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </Select>
+                    ) : subDef?.id === '04' && s.schemeKey === 'paynow' ? (
+                      <DateTimeValue value={t.value} onChange={(val) => updateSchemeTag(i, ti, { value: val })} />
+                    ) : (
+                      <Input value={t.value} onChange={(e) => updateSchemeTag(i, ti, { value: e.target.value })} disabled={isConst} />
+                    )}
+                    {t.id !== '03' && inlineError && <span className="text-xs text-red-600">{inlineError}</span>}
+                    {s.schemeKey === 'paynow' && t.id === '03' && (
+                      <EditableAmountNote poi={emvco.poiMethod} amount={emvco.common?.['54'] ?? ''} value={t.value} />
+                    )}
                   </div>
                 )
               })}
@@ -185,19 +205,45 @@ export function EmvcoRoot() {
         ))}
       </div>
 
-      <div className="flex items-center justify-between mt-2">
+      <div className="flex items-center justify-between mt-2 pb-2">
         <h3 className="text-sm font-medium">Additional Data Template (62)</h3>
-        <Button variant="outline" onClick={() => addTag62({ id: '01', value: '' })}>Add 62 Sub-tag</Button>
+        <Button
+          variant="outline"
+          onClick={() => {
+            const list = emvco.additionalData62 ?? []
+            const newId = nextSubTagId(list as any)
+            const def = getAdditional62Def(newId)
+            const value = def?.constValue ?? (def?.options?.[0]?.value ?? '')
+            addTag62({ id: newId, value: value ?? '' })
+          }}
+        >
+          Add 62 Sub-tag
+        </Button>
       </div>
       <div className="flex flex-col gap-2">
         {(emvco.additionalData62 ?? []).map((t, i) => (
-          <div key={i} className="grid grid-cols-[80px_1fr_auto] gap-2 items-center">
-            <input className="border rounded-md p-1" value={t.id} onChange={(e) => updateTag62(i, { id: e.target.value })} />
-            <input className="border rounded-md p-1" value={t.value} onChange={(e) => updateTag62(i, { value: e.target.value })} />
-            <div className="flex gap-1">
-              <Button variant="outline" onClick={() => i>0 && moveTag62(i, i-1)}>Up</Button>
-              <Button variant="outline" onClick={() => moveTag62(i, i+1)}>Down</Button>
-              <Button variant="outline" onClick={() => removeTag62(i)}>Remove</Button>
+          <div key={i} className="flex flex-col gap-2 pb-2">
+            <div className="flex items-center justify-between text-sm">
+              <div className="font-semibold">{getAdditional62Def(t.id)?.name ?? 'Additional data'}</div>
+              <button
+                className="p-1.5 text-red-600 hover:text-red-700 focus-visible:outline-none"
+                onClick={() => removeTag62(i)}
+                aria-label="Delete 62 sub-tag"
+              >
+                <span className="material-symbols-outlined text-[16px]">delete</span>
+              </button>
+            </div>
+            <div className="text-xs font-mono text-neutral-500 dark:text-neutral-400">{tlvPreview(t.id, t.value)}</div>
+            <div className="grid grid-cols-1 gap-2">
+              {getAdditional62Def(t.id)?.options ? (
+                <Select value={t.value} onChange={(e) => updateTag62(i, { value: e.target.value })}>
+                  {getAdditional62Def(t.id)!.options!.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </Select>
+              ) : (
+                <Input value={t.value} onChange={(e) => updateTag62(i, { value: e.target.value })} />
+              )}
             </div>
           </div>
         ))}
@@ -310,16 +356,44 @@ function composeDateTime(date: string, time: string): string {
   return `${ymd}${hhmmss}`
 }
 
+function tlvPreview(id: string, value: string) {
+  try {
+    const len = new TextEncoder().encode(value ?? '').length
+    const ll = len.toString().padStart(2, '0')
+    return `${id}${ll}${value ?? ''}`
+  } catch {
+    return `${id}00`
+  }
+}
+
+type Additional62Def = {
+  name: string
+  required?: boolean
+  constValue?: string
+  options?: { value: string; label: string }[]
+}
+
+const ADDITIONAL62_DEFS: Record<string, Additional62Def> = {
+  '01': { name: 'Bill number' },
+  '02': { name: 'Mobile number' },
+  // Extend with more known tags as needed
+}
+
+function getAdditional62Def(id?: string): Additional62Def | undefined {
+  if (!id) return undefined
+  return ADDITIONAL62_DEFS[id]
+}
+
 function DateTimeValue({ value, onChange }: { value: string; onChange: (val: string) => void }) {
   const { date, time } = parseDateTimeValue(value)
   return (
     <div className="flex flex-col gap-1">
       <div className="flex gap-2 items-center">
-        <input type="date" className="border rounded-md p-1" value={date} onChange={(e) => onChange(composeDateTime(e.target.value, time))} />
-        <input type="time" step={1} className="border rounded-md p-1" value={time} onChange={(e) => onChange(composeDateTime(date, e.target.value))} />
-        <button type="button" className="border rounded-md px-2 py-1 text-sm bg-white hover:bg-neutral-50" onClick={() => onChange('')}>Clear</button>
+        <input type="date" className="border rounded-md p-1 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-50" value={date} onChange={(e) => onChange(composeDateTime(e.target.value, time))} />
+        <input type="time" step={1} className="border rounded-md p-1 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-50" value={time} onChange={(e) => onChange(composeDateTime(date, e.target.value))} />
+        <button type="button" className="border rounded-md px-2 py-1 text-sm bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-50 dark:hover:bg-neutral-800" onClick={() => onChange('')}>Clear</button>
       </div>
-      <input className="border rounded-md p-1 font-mono" readOnly placeholder="YYYYMMDDHHmmss" value={value} />
+      <input className="border rounded-md p-1 font-mono dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-50" readOnly placeholder="YYYYMMDDHHmmss" value={value} />
     </div>
   )
 }

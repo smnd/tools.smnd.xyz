@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import type { EmvcoConfig, TLV, TLVContainer } from '../lib/payload-builder'
 import type { UpiConfig } from '../lib/upi-builder'
+import { getSchemeByKey } from '../schemes/sgqr'
 
-export type Mode = 'emvco' | 'upi'
+export type Mode = 'sgqr' | 'duitnow' | 'upi'
 
 type Branding = {
   logos: {
@@ -41,23 +42,17 @@ export interface ConfigState {
 
   // Presets
   loadPreset: (name: 'blank' | 'paynow' | 'duitnow' | 'upi') => void
+
+  // Theme
+  theme: 'system' | 'light' | 'dark'
+  setTheme: (t: 'system' | 'light' | 'dark') => void
 }
 
 const defaultEmvco: EmvcoConfig = {
   poiMethod: '11',
   common: { '53': '702', '58': 'SG', '59': 'EXAMPLE SHOP', '60': 'SINGAPORE' },
   additionalData62: [],
-  schemes: [
-    {
-      id: 26,
-      label: 'PayNow',
-      schemeKey: 'paynow',
-      tags: [
-        { id: '00', value: 'A000000677010112' },
-        { id: '01', value: 'UEN12345678' }
-      ],
-    },
-  ],
+  schemes: [],
   qr: { ecc: 'M', moduleSize: 8, color: '#000000', bgColor: '#FFFFFF' },
 }
 
@@ -87,7 +82,7 @@ function arrayMove<T>(arr: T[], from: number, to: number) {
 }
 
 export const useConfigStore = create<ConfigState>((set) => ({
-  mode: 'emvco',
+  mode: 'sgqr',
   setMode: (mode) => set({ mode }),
 
   branding: initialBranding,
@@ -162,7 +157,18 @@ export const useConfigStore = create<ConfigState>((set) => ({
 
   loadPreset: (name) => set((s) => {
     if (name === 'blank') return saveLocal({ emvco: { poiMethod: '11', common: {}, additionalData62: [], schemes: [], qr: s.emvco.qr } }).state
-    if (name === 'paynow') return saveLocal({ emvco: defaultEmvco }).state
+    if (name === 'paynow') {
+      const def = getSchemeByKey('paynow')
+      const tags = (def?.subTags ?? []).map(st => ({ id: st.id, value: st.constValue ?? (st.options?.[0]?.value ?? '') }))
+      const cfg: EmvcoConfig = {
+        poiMethod: '11',
+        common: { '53': '702', '58': 'SG' },
+        additionalData62: [],
+        schemes: def ? [{ id: 26, label: def.label, schemeKey: def.key, tags }] : [],
+        qr: { ecc: 'M', moduleSize: 8, color: '#000000', bgColor: '#FFFFFF' },
+      }
+      return saveLocal({ emvco: cfg }).state
+    }
     if (name === 'duitnow') {
       const cfg: EmvcoConfig = {
         poiMethod: '11',
@@ -184,6 +190,10 @@ export const useConfigStore = create<ConfigState>((set) => ({
     if (name === 'upi') return saveLocal({ upi: defaultUpi }).state
     return { ...s }
   }),
+
+  // Theme
+  theme: loadTheme() ?? 'system',
+  setTheme: (t) => set(() => { saveTheme(t); return { theme: t } }),
 }))
 
 function saveLocal(patch: Partial<Pick<ConfigState, 'emvco' | 'upi'>>) {
@@ -217,4 +227,16 @@ function getGlobalState(): Pick<ConfigState, 'emvco' | 'upi'> {
   } catch {
     return { emvco: defaultEmvco, upi: defaultUpi }
   }
+}
+
+function loadTheme(): 'system' | 'light' | 'dark' | null {
+  try {
+    const t = localStorage.getItem('theme') as any
+    if (t === 'system' || t === 'light' || t === 'dark') return t
+    return null
+  } catch { return null }
+}
+
+function saveTheme(t: 'system' | 'light' | 'dark') {
+  try { localStorage.setItem('theme', t) } catch {}
 }

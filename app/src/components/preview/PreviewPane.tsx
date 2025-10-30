@@ -19,9 +19,9 @@ export function PreviewPane() {
 
   const logoSrc = useMemo(() => {
     if (mode === 'upi') return logos.upi
-    const hasDuitNow = (emvco.schemes ?? []).some(s => /duitnow/i.test(s.label))
-    return hasDuitNow ? logos.duitnow : logos.sgqr
-  }, [mode, emvco.schemes, logos])
+    if (mode === 'duitnow') return logos.duitnow
+    return logos.sgqr
+  }, [mode, logos])
 
   // Build payload/URI and render SVG
   useEffect(() => {
@@ -99,18 +99,18 @@ export function PreviewPane() {
       </div>
       <Controls />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="border rounded-md p-4 bg-white">
+        <div className="border rounded-md p-4 bg-white dark:bg-neutral-900 dark:border-neutral-800">
           <div className="relative w-[256px] h-[256px]">
             <div className="absolute inset-0" dangerouslySetInnerHTML={{ __html: svg }} />
             {logoSrc && (
               <img src={logoSrc} alt="logo" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[56px] h-auto" />
             )}
           </div>
-          <p className="text-xs text-neutral-600 mt-2">Logo is auto-selected based on type. Safe area ~20%.</p>
+          <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-2">Logo is auto-selected based on type. Safe area ~20%.</p>
         </div>
         <div>
           <h3 className="text-sm font-medium mb-2">Payload</h3>
-          <textarea className="w-full h-48 border rounded-md p-2 font-mono text-sm" readOnly value={payload} />
+          <textarea className="w-full h-48 border rounded-md p-2 font-mono text-sm bg-white dark:bg-neutral-900 dark:border-neutral-800 dark:text-neutral-50" readOnly value={payload} />
         </div>
       </div>
     </div>
