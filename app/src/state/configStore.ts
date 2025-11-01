@@ -5,19 +5,9 @@ import { getSchemeByKey } from '../schemes/sgqr'
 
 export type Mode = 'sgqr' | 'duitnow' | 'upi'
 
-type Branding = {
-  logos: {
-    sgqr: string
-    duitnow: string
-    upi: string
-  }
-}
-
 export interface ConfigState {
   mode: Mode
   setMode: (m: Mode) => void
-
-  branding: Branding
 
   emvco: EmvcoConfig
   upi: UpiConfig
@@ -66,14 +56,6 @@ const defaultUpi: UpiConfig = {
   qr: { ecc: 'M', moduleSize: 8, color: '#000000', bgColor: '#FFFFFF' },
 }
 
-const initialBranding: Branding = {
-  logos: {
-    sgqr: '/assets/sgqr.svg',
-    duitnow: '/assets/duitnow.svg',
-    upi: '/assets/upi.svg',
-  },
-}
-
 function arrayMove<T>(arr: T[], from: number, to: number) {
   const copy = arr.slice()
   const [item] = copy.splice(from, 1)
@@ -81,162 +63,247 @@ function arrayMove<T>(arr: T[], from: number, to: number) {
   return copy
 }
 
-export const useConfigStore = create<ConfigState>((set) => ({
-  mode: 'sgqr',
-  setMode: (mode) => set({ mode }),
-
-  branding: initialBranding,
-
-  emvco: loadEmvco() ?? defaultEmvco,
-  upi: loadUpi() ?? defaultUpi,
-
-  setEmvco: (p) => set((s) => saveLocal({ emvco: { ...s.emvco, ...p } }).state),
-  addScheme: (scheme) => set((s) => saveLocal({ emvco: { ...s.emvco, schemes: [...(s.emvco.schemes ?? []), scheme] } }).state),
-  removeScheme: (index) => set((s) => {
-    const schemes = (s.emvco.schemes ?? []).slice()
-    schemes.splice(index, 1)
-    return saveLocal({ emvco: { ...s.emvco, schemes } }).state
-  }),
-  moveScheme: (from, to) => set((s) => {
-    const schemes = arrayMove(s.emvco.schemes ?? [], from, to)
-    return saveLocal({ emvco: { ...s.emvco, schemes } }).state
-  }),
-  updateScheme: (index, data) => set((s) => {
-    const schemes = (s.emvco.schemes ?? []).slice()
-    schemes[index] = { ...schemes[index], ...data }
-    return saveLocal({ emvco: { ...s.emvco, schemes } }).state
-  }),
-  addSchemeTag: (schemeIndex, tag) => set((s) => {
-    const schemes = (s.emvco.schemes ?? []).slice()
-    const sch = schemes[schemeIndex]
-    sch.tags = [...sch.tags, tag]
-    return saveLocal({ emvco: { ...s.emvco, schemes } }).state
-  }),
-  updateSchemeTag: (schemeIndex, tagIndex, data) => set((s) => {
-    const schemes = (s.emvco.schemes ?? []).slice()
-    const sch = schemes[schemeIndex]
-    const tags = sch.tags.slice()
-    tags[tagIndex] = { ...tags[tagIndex], ...data }
-    sch.tags = tags
-    return saveLocal({ emvco: { ...s.emvco, schemes } }).state
-  }),
-  removeSchemeTag: (schemeIndex, tagIndex) => set((s) => {
-    const schemes = (s.emvco.schemes ?? []).slice()
-    const sch = schemes[schemeIndex]
-    const tags = sch.tags.slice()
-    tags.splice(tagIndex, 1)
-    sch.tags = tags
-    return saveLocal({ emvco: { ...s.emvco, schemes } }).state
-  }),
-  moveSchemeTag: (schemeIndex, from, to) => set((s) => {
-    const schemes = (s.emvco.schemes ?? []).slice()
-    const sch = schemes[schemeIndex]
-    sch.tags = arrayMove(sch.tags, from, to)
-    return saveLocal({ emvco: { ...s.emvco, schemes } }).state
-  }),
-  addTag62: (t) => set((s) => {
-    const list = [...(s.emvco.additionalData62 ?? []), t]
-    return saveLocal({ emvco: { ...s.emvco, additionalData62: list } }).state
-  }),
-  updateTag62: (index, data) => set((s) => {
-    const list = (s.emvco.additionalData62 ?? []).slice()
-    list[index] = { ...list[index], ...data }
-    return saveLocal({ emvco: { ...s.emvco, additionalData62: list } }).state
-  }),
-  removeTag62: (index) => set((s) => {
-    const list = (s.emvco.additionalData62 ?? []).slice()
-    list.splice(index, 1)
-    return saveLocal({ emvco: { ...s.emvco, additionalData62: list } }).state
-  }),
-  moveTag62: (from, to) => set((s) => {
-    const list = arrayMove(s.emvco.additionalData62 ?? [], from, to)
-    return saveLocal({ emvco: { ...s.emvco, additionalData62: list } }).state
-  }),
-
-  setUpi: (p) => set((s) => saveLocal({ upi: { ...s.upi, ...p } }).state),
-
-  loadPreset: (name) => set((s) => {
-    if (name === 'blank') return saveLocal({ emvco: { poiMethod: '11', common: {}, additionalData62: [], schemes: [], qr: s.emvco.qr } }).state
-    if (name === 'paynow') {
-      const def = getSchemeByKey('paynow')
-      const tags = (def?.subTags ?? []).map(st => ({ id: st.id, value: st.constValue ?? (st.options?.[0]?.value ?? '') }))
-      const cfg: EmvcoConfig = {
-        poiMethod: '11',
-        common: { '53': '702', '58': 'SG' },
-        additionalData62: [],
-        schemes: def ? [{ id: 26, label: def.label, schemeKey: def.key, tags }] : [],
-        qr: { ecc: 'M', moduleSize: 8, color: '#000000', bgColor: '#FFFFFF' },
-      }
-      return saveLocal({ emvco: cfg }).state
-    }
-    if (name === 'duitnow') {
-      const cfg: EmvcoConfig = {
-        poiMethod: '11',
-        common: { '53': '458', '58': 'MY', '59': 'EXAMPLE SHOP', '60': 'KUALA LUMPUR' },
-        additionalData62: [],
-        schemes: [
-          {
-            id: 26,
-            label: 'DuitNow',
-            tags: [
-              { id: '00', value: '' }, // AID required; left blank for user
-            ],
-          },
-        ],
-        qr: { ecc: 'M', moduleSize: 8, color: '#000000', bgColor: '#FFFFFF' },
-      }
-      return saveLocal({ emvco: cfg }).state
-    }
-    if (name === 'upi') return saveLocal({ upi: defaultUpi }).state
-    return { ...s }
-  }),
-
-  // Theme
-  theme: loadTheme() ?? 'system',
-  setTheme: (t) => set(() => { saveTheme(t); return { theme: t } }),
-}))
-
-function saveLocal(patch: Partial<Pick<ConfigState, 'emvco' | 'upi'>>) {
-  const state = { ...getGlobalState(), ...patch }
+function loadJson<T>(key: string): T | null {
   try {
-    if (state.emvco) localStorage.setItem('emvco-config', JSON.stringify(state.emvco))
-    if (state.upi) localStorage.setItem('upi-config', JSON.stringify(state.upi))
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    return JSON.parse(raw) as T
+  } catch {
+    return null
+  }
+}
+
+function saveJson(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
   } catch {}
-  return { state }
 }
 
 function loadEmvco(): EmvcoConfig | null {
-  try {
-    const s = localStorage.getItem('emvco-config')
-    return s ? (JSON.parse(s) as EmvcoConfig) : null
-  } catch { return null }
+  return loadJson<EmvcoConfig>('emvco-config')
 }
 
 function loadUpi(): UpiConfig | null {
-  try {
-    const s = localStorage.getItem('upi-config')
-    return s ? (JSON.parse(s) as UpiConfig) : null
-  } catch { return null }
-}
-
-function getGlobalState(): Pick<ConfigState, 'emvco' | 'upi'> {
-  try {
-    const e = loadEmvco() ?? defaultEmvco
-    const u = loadUpi() ?? defaultUpi
-    return { emvco: e, upi: u }
-  } catch {
-    return { emvco: defaultEmvco, upi: defaultUpi }
-  }
+  return loadJson<UpiConfig>('upi-config')
 }
 
 function loadTheme(): 'system' | 'light' | 'dark' | null {
   try {
-    const t = localStorage.getItem('theme') as any
-    if (t === 'system' || t === 'light' || t === 'dark') return t
+    const raw = localStorage.getItem('theme')
+    if (!raw) return null
+    if (raw === 'system' || raw === 'light' || raw === 'dark') return raw
+    try {
+      const parsed = JSON.parse(raw)
+      if (parsed === 'system' || parsed === 'light' || parsed === 'dark') return parsed
+    } catch {}
     return null
-  } catch { return null }
+  } catch {
+    return null
+  }
 }
 
-function saveTheme(t: 'system' | 'light' | 'dark') {
-  try { localStorage.setItem('theme', t) } catch {}
+function persistSnapshot(state: Pick<ConfigState, 'emvco' | 'upi' | 'theme'>) {
+  saveJson('emvco-config', state.emvco)
+  saveJson('upi-config', state.upi)
+  if (state.theme) {
+    try {
+      localStorage.setItem('theme', state.theme)
+    } catch {}
+  }
 }
+
+export const useConfigStore = create<ConfigState>((set, get) => ({
+  mode: 'sgqr',
+  setMode: (mode) => set({ mode }),
+
+  emvco: loadEmvco() ?? defaultEmvco,
+  upi: loadUpi() ?? defaultUpi,
+
+  setEmvco: (p) => {
+    set((s) => {
+      const next = { ...s.emvco, ...p }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+  addScheme: (scheme) => {
+    set((s) => {
+      const next = { ...s.emvco, schemes: [...(s.emvco.schemes ?? []), scheme] }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+  removeScheme: (index) => {
+    set((s) => {
+      const schemes = (s.emvco.schemes ?? []).filter((_, i) => i !== index)
+      const next = { ...s.emvco, schemes }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+  moveScheme: (from, to) => {
+    set((s) => {
+      const next = { ...s.emvco, schemes: arrayMove(s.emvco.schemes ?? [], from, to) }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+  updateScheme: (index, data) => {
+    set((s) => {
+      const schemes = (s.emvco.schemes ?? []).map((scheme, i) =>
+        i === index ? { ...scheme, ...data } : scheme
+      )
+      const next = { ...s.emvco, schemes }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+  addSchemeTag: (schemeIndex, tag) => {
+    set((s) => {
+      const schemes = (s.emvco.schemes ?? []).map((scheme, i) =>
+        i === schemeIndex ? { ...scheme, tags: [...scheme.tags, tag] } : scheme
+      )
+      const next = { ...s.emvco, schemes }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+  updateSchemeTag: (schemeIndex, tagIndex, data) => {
+    set((s) => {
+      const schemes = (s.emvco.schemes ?? []).map((scheme, i) => {
+        if (i !== schemeIndex) return scheme
+        const tags = scheme.tags.map((tag, ti) =>
+          ti === tagIndex ? { ...tag, ...data } : tag
+        )
+        return { ...scheme, tags }
+      })
+      const next = { ...s.emvco, schemes }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+  removeSchemeTag: (schemeIndex, tagIndex) => {
+    set((s) => {
+      const schemes = (s.emvco.schemes ?? []).map((scheme, i) => {
+        if (i !== schemeIndex) return scheme
+        const tags = scheme.tags.filter((_, ti) => ti !== tagIndex)
+        return { ...scheme, tags }
+      })
+      const next = { ...s.emvco, schemes }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+  moveSchemeTag: (schemeIndex, from, to) => {
+    set((s) => {
+      const schemes = (s.emvco.schemes ?? []).map((scheme, i) => {
+        if (i !== schemeIndex) return scheme
+        return { ...scheme, tags: arrayMove(scheme.tags, from, to) }
+      })
+      const next = { ...s.emvco, schemes }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+  addTag62: (t) => {
+    set((s) => {
+      const next = {
+        ...s.emvco,
+        additionalData62: [...(s.emvco.additionalData62 ?? []), t],
+      }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+  updateTag62: (index, data) => {
+    set((s) => {
+      const list = (s.emvco.additionalData62 ?? []).map((tag, i) =>
+        i === index ? { ...tag, ...data } : tag
+      )
+      const next = { ...s.emvco, additionalData62: list }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+  removeTag62: (index) => {
+    set((s) => {
+      const list = (s.emvco.additionalData62 ?? []).filter((_, i) => i !== index)
+      const next = { ...s.emvco, additionalData62: list }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+  moveTag62: (from, to) => {
+    set((s) => {
+      const next = {
+        ...s.emvco,
+        additionalData62: arrayMove(s.emvco.additionalData62 ?? [], from, to),
+      }
+      persistSnapshot({ emvco: next, upi: s.upi, theme: s.theme })
+      return { emvco: next }
+    })
+  },
+
+  setUpi: (p) => {
+    set((s) => {
+      const next = { ...s.upi, ...p }
+      persistSnapshot({ emvco: s.emvco, upi: next, theme: s.theme })
+      return { upi: next }
+    })
+  },
+
+  loadPreset: (name) => {
+    set((s) => {
+      let patch: Partial<ConfigState> = {}
+      if (name === 'blank') {
+        patch = {
+          emvco: { poiMethod: '11', common: {}, additionalData62: [], schemes: [], qr: s.emvco.qr },
+        }
+      } else if (name === 'paynow') {
+        const def = getSchemeByKey('paynow')
+        const tags = (def?.subTags ?? []).map(st => ({ id: st.id, value: st.constValue ?? (st.options?.[0]?.value ?? '') }))
+        patch = {
+          emvco: {
+            poiMethod: '11',
+            common: { '53': '702', '58': 'SG' },
+            additionalData62: [],
+            schemes: def ? [{ id: 26, label: def.label, schemeKey: def.key, tags }] : [],
+            qr: { ecc: 'M', moduleSize: 8, color: '#000000', bgColor: '#FFFFFF' },
+          },
+        }
+      } else if (name === 'duitnow') {
+        patch = {
+          emvco: {
+            poiMethod: '11',
+            common: { '53': '458', '58': 'MY', '59': 'EXAMPLE SHOP', '60': 'KUALA LUMPUR' },
+            additionalData62: [],
+            schemes: [
+              {
+                id: 26,
+                label: 'DuitNow',
+                tags: [
+                  { id: '00', value: '' }, // AID required; left blank for user
+                ],
+              },
+            ],
+            qr: { ecc: 'M', moduleSize: 8, color: '#000000', bgColor: '#FFFFFF' },
+          },
+        }
+      } else if (name === 'upi') {
+        patch = { upi: defaultUpi }
+      }
+      const next = { ...s, ...patch }
+      persistSnapshot({ emvco: next.emvco, upi: next.upi, theme: next.theme })
+      return patch
+    })
+  },
+
+  // Theme
+  theme: loadTheme() ?? 'system',
+  setTheme: (t) => {
+    set(() => {
+      persistSnapshot({ emvco: get().emvco, upi: get().upi, theme: t })
+      return { theme: t }
+    })
+  },
+}))

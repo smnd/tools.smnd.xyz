@@ -9,6 +9,7 @@ import { MSG } from '../../strings/messages'
 import { Input } from '../ui/input'
 import { Select } from '../ui/select'
 import { Label } from '../ui/label'
+import { useToast } from '../ui/toast'
 
 export function EmvcoRoot() {
   const emvco = useConfigStore(s => s.emvco)
@@ -28,6 +29,7 @@ export function EmvcoRoot() {
   const issues = validateBasicEmvco(emvco)
   const [addSel, setAddSel] = useState<string>('')
   const usedKeys = useMemo(() => new Set(((emvco.schemes ?? []).map(s => s.schemeKey).filter(Boolean) as string[])), [emvco.schemes])
+  const { pushToast } = useToast()
 
   const handleAddPredefined = (key: string) => {
     const def = getSchemeByKey(key)
@@ -40,6 +42,34 @@ export function EmvcoRoot() {
     setAddSel('')
   }
 
+  const handleExport = () => {
+    exportEmvco(emvco)
+    pushToast({
+      variant: 'success',
+      title: 'EMVCo JSON exported',
+      description: 'Current configuration downloaded.',
+    })
+  }
+
+  const handleImport = async (file: File, reset: () => void) => {
+    const res = await importEmvco(file)
+    if (res.ok && res.data) {
+      setEmvco(res.data)
+      pushToast({
+        variant: 'success',
+        title: 'EMVCo JSON imported',
+        description: `${file.name} loaded successfully.`,
+      })
+    } else {
+      pushToast({
+        variant: 'error',
+        title: 'Import failed',
+        description: res.error ?? 'Could not read the selected file.',
+      })
+    }
+    reset()
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between pb-2">
@@ -48,7 +78,7 @@ export function EmvcoRoot() {
           <p className="text-xs text-neutral-500 dark:text-neutral-400">SGQR / PayNow builder</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="h-9 w-9 inline-flex items-center justify-center rounded-md border bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:text-neutral-100" onClick={() => exportEmvco(emvco)} aria-label="Export" title="Export JSON">
+          <button className="h-9 w-9 inline-flex items-center justify-center rounded-md border bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:text-neutral-100" onClick={handleExport} aria-label="Export" title="Export JSON">
             <span className="material-symbols-outlined">download</span>
           </button>
           <label className="h-9 w-9 inline-flex items-center justify-center rounded-md border bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:border-neutral-700 dark:hover:bg-neutral-800 dark:text-neutral-100 cursor-pointer" aria-label="Import" title="Import JSON">
@@ -56,9 +86,7 @@ export function EmvcoRoot() {
             <input type="file" accept="application/json" className="hidden" onChange={async (e) => {
               const file = e.target.files?.[0]
               if (!file) return
-              const res = await importEmvco(file)
-              if (res.ok && res.data) setEmvco(res.data)
-              else alert(res.error)
+              await handleImport(file, () => { e.target.value = '' })
             }} />
           </label>
         </div>

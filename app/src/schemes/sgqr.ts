@@ -23,8 +23,8 @@ export const SGQR_SCHEMES: SchemeDef[] = [
       { id: '01', name: 'Proxy type', required: true, 
         options: [
         { value: '0', label: '0: Mobile number (P2P)' },
-        { value: '2', label: '1: UEN' },
-        { value: '3', label: '2: VPA' }
+        { value: '2', label: '2: UEN' },
+        { value: '3', label: '3: VPA' }
       ]
     },
       { id: '02', name: 'Proxy value', required: true },
