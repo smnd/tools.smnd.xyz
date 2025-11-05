@@ -88,14 +88,14 @@ export function useToast() {
 function ToastItem({ toast, onDismiss }: { toast: ToastInstance; onDismiss: (id: string) => void }) {
   const { id, title, description, variant } = toast
   const variantClasses = {
-    default: 'border border-neutral-200/70 bg-white/90 text-neutral-800 shadow-lg dark:border-neutral-700/70 dark:bg-neutral-900/90 dark:text-neutral-100',
-    success: 'border border-emerald-200/80 bg-emerald-50/95 text-emerald-800 shadow-lg shadow-emerald-400/20 dark:border-emerald-500/50 dark:bg-emerald-500/15 dark:text-emerald-100',
-    error: 'border border-red-200/80 bg-red-50/95 text-red-800 shadow-lg shadow-red-400/20 dark:border-red-500/50 dark:bg-red-500/15 dark:text-red-100',
+    default: 'border border-neutral-200 bg-white text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100',
+    success: 'border border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-100',
+    error: 'border border-red-300 bg-red-50 text-red-800 dark:border-red-700 dark:bg-red-950 dark:text-red-100',
   } as const
 
   return (
     <div
-      className={`pointer-events-auto flex items-start gap-3 rounded-xl px-4 py-3 backdrop-blur-md transition-all duration-200 ${variantClasses[variant ?? 'default']}`}
+      className={`pointer-events-auto flex items-start gap-3 rounded-lg px-4 py-3 transition-all duration-200 ${variantClasses[variant ?? 'default']}`}
       role="status"
     >
       <div className="flex-1">

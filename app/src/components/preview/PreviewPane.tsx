@@ -30,18 +30,15 @@ export function PreviewPane() {
     switch (mode) {
       case 'upi':
         return {
-          chip: 'from-rose-500/90 to-orange-500/80',
-          glow: 'from-rose-500/20 via-transparent to-orange-500/10',
+          chip: 'bg-rose-500',
         }
       case 'duitnow':
         return {
-          chip: 'from-emerald-500/90 to-teal-500/80',
-          glow: 'from-emerald-500/18 via-transparent to-teal-500/12',
+          chip: 'bg-emerald-500',
         }
       default:
         return {
-          chip: 'from-blue-500/90 to-indigo-500/80',
-          glow: 'from-blue-500/20 via-transparent to-indigo-500/12',
+          chip: 'bg-blue-500',
         }
     }
   }, [mode])
@@ -192,8 +189,8 @@ export function PreviewPane() {
       <div className="flex flex-col gap-3">
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <span className={cn('inline-flex items-center gap-2 rounded-full bg-gradient-to-r px-3 py-1 text-[10px] font-semibold tracking-[0.24em] text-white shadow-sm', accent.chip)}>
-              <span className="h-1.5 w-1.5 rounded-full bg-white/90 shadow" />
+            <span className={cn('inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-semibold tracking-[0.24em] text-white', accent.chip)}>
+              <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
               Preview · {modeLabel}
             </span>
             <h2 className="mt-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">Output &amp; Export</h2>
@@ -203,10 +200,10 @@ export function PreviewPane() {
           </div>
           <div
             className={cn(
-              'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium shadow-sm transition-colors',
+              'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
               isDirty
-                ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-400/30 dark:bg-amber-400/15 dark:text-amber-100'
-                : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-50'
+                ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500 dark:bg-amber-950 dark:text-amber-100'
+                : 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-950 dark:text-emerald-50'
             )}
           >
             <span className="material-symbols-outlined text-base leading-none">{isDirty ? 'refresh' : 'check_circle'}</span>
@@ -214,10 +211,10 @@ export function PreviewPane() {
           </div>
         </div>
       </div>
-      <div className="rounded-2xl border border-neutral-200/70 bg-white/80 p-3 shadow-sm shadow-neutral-900/5 backdrop-blur-sm dark:border-neutral-800/70 dark:bg-neutral-950/40 dark:shadow-black/40">
+      <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-800">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-          <div className="flex-1">
-            <div className="min-h-[60px] rounded-xl bg-neutral-900/5 px-3 py-2 font-mono text-xs text-neutral-800 break-words whitespace-pre-wrap dark:bg-white/5 dark:text-neutral-100">
+          <div className="flex-1 min-w-0">
+            <div className="min-h-[60px] max-h-[200px] overflow-y-auto rounded-lg bg-white px-3 py-2 font-mono text-xs text-neutral-800 break-all dark:bg-neutral-900 dark:text-neutral-100">
               {payload}
             </div>
           </div>
@@ -227,14 +224,13 @@ export function PreviewPane() {
             onClick={copyPayload}
             aria-label="Copy payload"
             title="Copy payload"
-            className="border border-transparent bg-white/70 text-neutral-600 hover:border-neutral-200 hover:bg-white dark:bg-neutral-900/70 dark:text-neutral-200 dark:hover:bg-neutral-900"
+            className="border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800"
           >
             <span className="material-symbols-outlined text-base leading-none">content_copy</span>
           </Button>
         </div>
       </div>
-      <div className="relative overflow-hidden rounded-2xl border border-neutral-200/70 bg-gradient-to-br from-white/95 to-white/70 p-5 shadow-xl shadow-neutral-900/10 backdrop-blur-sm dark:border-neutral-800/70 dark:from-neutral-950/70 dark:to-neutral-950/40 dark:shadow-black/50">
-        <div className={cn('pointer-events-none absolute inset-0 rounded-2xl opacity-70 bg-gradient-to-br', accent.glow)} />
+      <div className="relative overflow-hidden rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-900">
         <div className="relative flex flex-col items-center gap-5">
           <div className="flex w-full items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
             <span className="inline-flex items-center gap-2 font-medium text-neutral-600 dark:text-neutral-300">
@@ -263,15 +259,15 @@ export function PreviewPane() {
             )}
           </div>
           {qrError && (
-            <div className="w-full rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+            <div className="w-full rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-700 dark:bg-red-950 dark:text-red-100">
               {qrError}
             </div>
           )}
           <div className="flex w-full flex-col gap-2 sm:flex-row">
-            <Button variant="outline" onClick={downloadSvg} className="flex-1 rounded-xl border-dashed">
+            <Button variant="outline" onClick={downloadSvg} className="flex-1 rounded-lg">
               Export SVG
             </Button>
-            <Button variant="outline" onClick={exportPng} className="flex-1 rounded-xl border-dashed">
+            <Button variant="outline" onClick={exportPng} className="flex-1 rounded-lg">
               Export PNG
             </Button>
           </div>
