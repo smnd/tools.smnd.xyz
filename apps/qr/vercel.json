@@ -1,5 +1,8 @@
 {
   "buildCommand": "cd ../.. && corepack enable && corepack prepare pnpm@10.20.0 --activate && pnpm install && pnpm --filter qr build",
   "outputDirectory": "dist",
-  "installCommand": "echo 'Install handled in buildCommand'"
+  "installCommand": "echo 'Install handled in buildCommand'",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
