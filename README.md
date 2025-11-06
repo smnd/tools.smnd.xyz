@@ -78,13 +78,21 @@ The command runs `tsc -b` followed by `vite build`, emitting production assets i
 
 ### Vercel Configuration
 
-Each app is deployed as a separate Vercel project. For the QR app:
+Each app is deployed as a separate Vercel project with its own `vercel.json` configuration file.
 
-**Project Settings:**
+**For the QR app (`apps/qr/vercel.json`):**
+```json
+{
+  "buildCommand": "cd ../.. && pnpm install && pnpm --filter qr build",
+  "outputDirectory": "dist",
+  "installCommand": "echo 'Install handled in buildCommand'"
+}
+```
+
+**Vercel Project Settings:**
 - **Root Directory**: `apps/qr`
-- **Build Command**: `cd ../.. && pnpm install && cd apps/qr && pnpm build`
-- **Output Directory**: `dist`
-- **Environment Variable**: `VITE_BASE_PATH=/qr`
+- **Build/Install/Output**: Leave empty (uses `vercel.json`)
+- **Environment Variable**: `VITE_BASE_PATH=/qr` (for sub-path deployments)
 
 ### Building for Sub-paths
 
@@ -173,13 +181,25 @@ To add a new tool to the monorepo:
    }
    ```
 
-6. **Deploy to Vercel:**
-   - Create new Vercel project
-   - Root Directory: `apps/new-app`
-   - Build Command: `cd ../.. && pnpm install && cd apps/new-app && pnpm build`
-   - Set `VITE_BASE_PATH=/new-app` if needed
+6. **Create `vercel.json` for deployment:**
+   ```bash
+   # Create apps/new-app/vercel.json
+   cat > apps/new-app/vercel.json << 'EOF'
+   {
+     "buildCommand": "cd ../.. && pnpm install && pnpm --filter new-app build",
+     "outputDirectory": "dist",
+     "installCommand": "echo 'Install handled in buildCommand'"
+   }
+   EOF
+   ```
 
-7. **Update Cloudflare Worker** to add the new route.
+7. **Deploy to Vercel:**
+   - Create new Vercel project linked to your repo
+   - Root Directory: `apps/new-app`
+   - Leave Build/Install/Output settings empty (uses `vercel.json`)
+   - Set `VITE_BASE_PATH=/new-app` environment variable if deploying to sub-path
+
+8. **Update Cloudflare Worker** to add the new route.
 
 ## License
 
