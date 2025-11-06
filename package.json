@@ -10,11 +10,14 @@
   "scripts": {
     "dev": "pnpm --filter qr dev",
     "dev:qr": "pnpm --filter qr dev",
+    "dev:qr-code": "pnpm --filter qr-code dev",
     "build": "pnpm --filter qr build",
     "build:qr": "pnpm --filter qr build",
+    "build:qr-code": "pnpm --filter qr-code build",
     "build:all": "pnpm --recursive --filter './apps/*' build",
     "preview": "pnpm --filter qr preview",
-    "preview:qr": "pnpm --filter qr preview"
+    "preview:qr": "pnpm --filter qr preview",
+    "preview:qr-code": "pnpm --filter qr-code preview"
   },
   "keywords": [],
   "author": "",

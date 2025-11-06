@@ -1,11 +1,14 @@
 # Tools Monorepo
 
-A collection of small web tools and utilities, starting with a Payment QR Generator. This monorepo uses pnpm workspaces for managing multiple apps with shared dependencies and consistent tooling.
+A collection of small web tools and utilities. This monorepo uses pnpm workspaces for managing multiple apps with shared dependencies and consistent tooling.
 
 ## Apps
 
-### QR Generator (`/apps/qr`)
+### Payment QR Generator (`/apps/qr`)
 A Vite + React SPA for composing EMVCo/UPI compliant payment QR codes, previewing them with live validation, and exporting the output as SVG or PNG. Features a modern UI with dark-mode support, toast notifications, and responsive layout.
+
+### QR Code Generator (`/apps/qr-code`)
+A simple and fast QR code generator. Enter any text or URL, and instantly generate a QR code. Download as PNG or SVG format. Features localStorage persistence and a clean, responsive interface.
 
 ## Features
 
@@ -36,14 +39,11 @@ A Vite + React SPA for composing EMVCo/UPI compliant payment QR codes, previewin
 # Install all dependencies
 pnpm install
 
-# Run QR app in dev mode (default)
+# Run Payment QR app in dev mode (default)
 pnpm dev
-# Or use the named script
+# Or use the named scripts
 pnpm dev:qr
-
-# When you add more apps:
-# pnpm dev:app1
-# pnpm dev:app2
+pnpm dev:qr-code
 
 # Or run from the app directory
 cd apps/qr
@@ -55,17 +55,14 @@ The dev server runs on `http://localhost:5173/`. Hot reload is enabled out of th
 ## Building & Testing
 
 ```bash
-# Build QR app (default)
+# Build Payment QR app (default)
 pnpm build
-# Or use the named script
+# Or use the named scripts
 pnpm build:qr
+pnpm build:qr-code
 
 # Build all apps at once
 pnpm build:all
-
-# When you add more apps:
-# pnpm build:app1
-# pnpm build:app2
 
 # Or build from app directory
 cd apps/qr
@@ -80,19 +77,28 @@ The command runs `tsc -b` followed by `vite build`, emitting production assets i
 
 Each app is deployed as a separate Vercel project with its own `vercel.json` configuration file.
 
-**For the QR app (`apps/qr/vercel.json`):**
+**Example for Payment QR app (`apps/qr/vercel.json`):**
 ```json
 {
-  "buildCommand": "cd ../.. && pnpm install && pnpm --filter qr build",
+  "buildCommand": "cd ../.. && corepack enable && corepack prepare pnpm@10.20.0 --activate && pnpm install && pnpm --filter qr build",
+  "outputDirectory": "dist",
+  "installCommand": "echo 'Install handled in buildCommand'"
+}
+```
+
+**Example for QR Code app (`apps/qr-code/vercel.json`):**
+```json
+{
+  "buildCommand": "cd ../.. && corepack enable && corepack prepare pnpm@10.20.0 --activate && pnpm install && pnpm --filter qr-code build",
   "outputDirectory": "dist",
   "installCommand": "echo 'Install handled in buildCommand'"
 }
 ```
 
 **Vercel Project Settings:**
-- **Root Directory**: `apps/qr`
+- **Root Directory**: `apps/{app-name}` (e.g., `apps/qr` or `apps/qr-code`)
 - **Build/Install/Output**: Leave empty (uses `vercel.json`)
-- **Environment Variable**: `VITE_BASE_PATH=/qr` (for sub-path deployments)
+- **Environment Variable**: `VITE_BASE_PATH=/{app-name}` (for sub-path deployments)
 
 ### Building for Sub-paths
 
@@ -102,6 +108,10 @@ The Vite config reads `VITE_BASE_PATH` to ensure assets resolve when hosted at a
 # Example: build for tools.smnd.xyz/qr
 cd apps/qr
 VITE_BASE_PATH=/qr pnpm build
+
+# Example: build for tools.smnd.xyz/qr-code
+cd apps/qr-code
+VITE_BASE_PATH=/qr-code pnpm build
 ```
 
 Keep the variable unset (defaults to `/`) for root deployments or local dev.
@@ -113,7 +123,7 @@ To host multiple apps on a single domain (e.g. `tools.smnd.xyz/qr`, `tools.smnd.
 ```js
 const routes = [
   { prefix: '/qr', target: 'tools-qr.vercel.app' },
-  { prefix: '/app1', target: 'tools-app1.vercel.app' },
+  { prefix: '/qr-code', target: 'tools-qr-code.vercel.app' },
   // Add more apps here...
 ]
 
