@@ -1,0 +1,8 @@
+{
+  "buildCommand": "cd ../.. && corepack enable && corepack prepare pnpm@10.20.0 --activate && pnpm install && pnpm --filter mx-checker build",
+  "outputDirectory": "dist",
+  "installCommand": "echo 'Install handled in buildCommand'",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
