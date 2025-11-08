@@ -10,6 +10,9 @@ A Vite + React SPA for composing EMVCo/UPI compliant payment QR codes, previewin
 ### QR Code Generator (`/apps/qr-code`)
 A simple and fast QR code generator. Enter any text or URL, and instantly generate a QR code. Download as PNG or SVG format. Features localStorage persistence and a clean, responsive interface.
 
+### MX Record Checker (`/apps/mx-checker`)
+Verify email domains by checking MX (Mail Exchange) records in bulk. Supports both text input (comma-separated, up to 10 domains) and CSV file uploads (unlimited domains). Uses DNS-over-HTTPS for fast, browser-based verification. Download results as CSV.
+
 ## Features
 
 - **Multi-scheme support** – Build SGQR/PayNow, DuitNow, or UPI payloads from tailored forms.
@@ -44,6 +47,7 @@ pnpm dev
 # Or use the named scripts
 pnpm dev:qr
 pnpm dev:qr-code
+pnpm dev:mx-checker
 
 # Or run from the app directory
 cd apps/qr
@@ -60,6 +64,7 @@ pnpm build
 # Or use the named scripts
 pnpm build:qr
 pnpm build:qr-code
+pnpm build:mx-checker
 
 # Build all apps at once
 pnpm build:all
@@ -124,6 +129,7 @@ To host multiple apps on a single domain (e.g. `tools.smnd.xyz/qr`, `tools.smnd.
 const routes = [
   { prefix: '/qr', target: 'tools-qr.vercel.app' },
   { prefix: '/qr-code', target: 'tools-qr-code.vercel.app' },
+  { prefix: '/mx-checker', target: 'tools-mx-checker.vercel.app' },
   // Add more apps here...
 ]
 

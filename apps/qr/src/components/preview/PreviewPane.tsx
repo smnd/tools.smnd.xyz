@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import QRCode from 'qrcode'
-import { Button } from '../ui/button'
-import { cn } from '../../lib/utils'
+import { Button, cn } from '@tools/ui'
 import { useToast } from '../ui/toast'
 import { useConfigStore } from '../../state/configStore'
 import { buildPayload } from '../../lib/payload-builder'

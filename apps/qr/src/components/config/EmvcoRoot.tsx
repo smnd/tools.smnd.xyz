@@ -1,4 +1,4 @@
-import { Button } from '../ui/button'
+import { Button } from '@tools/ui'
 import { useConfigStore } from '../../state/configStore'
 import { validateBasicEmvco } from '../../lib/validators'
 import { exportEmvco, importEmvco } from '../../lib/persistence'

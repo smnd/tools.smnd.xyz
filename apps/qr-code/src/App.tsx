@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Download } from 'lucide-react'
 import './App.css'
-import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
+import { Textarea, Button, ThemeToggle, Footer, getStoredTheme, setStoredTheme, applyTheme, watchSystemTheme, type Theme } from '@tools/ui'
 import {
   generateQRCode,
   generateQRCodeSVG,
@@ -16,6 +15,7 @@ function App() {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null)
   const [qrCodeSvg, setQrCodeSvg] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [theme, setTheme] = useState<Theme>(getStoredTheme())
 
   // Load payload from localStorage on mount
   useEffect(() => {
@@ -24,6 +24,18 @@ function App() {
       setPayload(savedPayload)
     }
   }, [])
+
+  // Initialize and manage theme
+  useEffect(() => {
+    applyTheme(theme)
+    setStoredTheme(theme)
+
+    // Watch for system theme changes if in auto mode
+    if (theme === 'auto') {
+      const unwatch = watchSystemTheme(() => applyTheme('auto'))
+      return unwatch
+    }
+  }, [theme])
 
   // Generate QR code whenever payload changes
   useEffect(() => {
@@ -73,29 +85,36 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-4 md:px-6">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-            QR Code Generator
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Generate QR codes instantly from any text or URL
-          </p>
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 py-4 md:px-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                QR Code Generator
+              </h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Generate QR codes instantly from any text or URL
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <ThemeToggle theme={theme} onThemeChange={setTheme} />
+            </div>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto p-4 md:p-6">
+      <main className="flex-1 max-w-7xl mx-auto p-4 md:p-6 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Input Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="space-y-4">
               <div>
                 <label
                   htmlFor="payload"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
                   Enter text or URL
                 </label>
@@ -108,12 +127,12 @@ function App() {
                   autoFocus
                 />
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                 <span>{payload.length} characters</span>
                 {payload && (
                   <button
                     onClick={() => setPayload('')}
-                    className="text-blue-600 hover:text-blue-700 underline"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
                   >
                     Clear
                   </button>
@@ -123,15 +142,15 @@ function App() {
           </div>
 
           {/* Preview Section */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <div className="space-y-4">
-              <h2 className="text-sm font-medium text-gray-700">QR Code Preview</h2>
+              <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">QR Code Preview</h2>
 
-              <div className="flex items-center justify-center min-h-[200px] md:min-h-[400px] bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <div className="flex items-center justify-center min-h-[200px] md:min-h-[400px] bg-gray-50 dark:bg-gray-900 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
                 {isGenerating ? (
                   <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-                    <p className="text-sm text-gray-500 mt-4">Generating QR code...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto"></div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">Generating QR code...</p>
                   </div>
                 ) : qrCodeDataUrl ? (
                   <div className="text-center">
@@ -145,7 +164,7 @@ function App() {
                 ) : (
                   <div className="text-center p-6">
                     <svg
-                      className="mx-auto h-12 w-12 text-gray-400"
+                      className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -157,7 +176,7 @@ function App() {
                         d="M12 4v16m8-8H4"
                       />
                     </svg>
-                    <p className="mt-4 text-sm text-gray-500">
+                    <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
                       Enter text above to generate a QR code
                     </p>
                   </div>
@@ -190,10 +209,7 @@ function App() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="max-w-7xl mx-auto px-4 py-6 md:px-6 text-center text-sm text-gray-500">
-        <p>Simple, fast, and free QR code generator</p>
-      </footer>
+      <Footer version="v1.0.0" />
     </div>
   )
 }

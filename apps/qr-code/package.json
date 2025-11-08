@@ -10,14 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@radix-ui/react-slot": "^1.2.3",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
+    "@tools/ui": "workspace:*",
     "lucide-react": "^0.548.0",
     "qrcode": "^1.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "tailwind-merge": "^3.3.1"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

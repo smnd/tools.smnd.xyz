@@ -4,9 +4,16 @@ export default {
   content: [
     './index.html',
     './src/**/*.{ts,tsx}',
+    '../../packages/ui/src/**/*.{ts,tsx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
+    },
   },
   plugins: [require('tailwindcss-animate')],
 }
