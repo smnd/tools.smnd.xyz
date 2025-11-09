@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="q₹. logo">
-  <style>:root { color: #000; } @media (prefers-color-scheme: dark) { :root { color: #fff; } } text { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, Noto Sans, sans-serif; font-weight: 800; font-size: 420px; letter-spacing: 0; fill: currentColor; }</style>
-  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central">q₹.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="h dot logo (auto dark/light)">
+  <style>
+    :root { color: #000; } /* light mode default */
+    @media (prefers-color-scheme: dark) {
+      :root { color: #fff; } /* dark mode */
+    }
+    text {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      font-weight: 800;
+      font-size: 420px;
+      letter-spacing: 0;
+      fill: currentColor;
+    }
+  </style>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central">h.</text>
 </svg>
