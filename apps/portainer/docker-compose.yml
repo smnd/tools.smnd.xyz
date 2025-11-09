@@ -8,7 +8,7 @@ services:
       context: ../../
       dockerfile: apps/portainer/Dockerfile
     ports:
-      - "3001:80"  # Change 3001 to your preferred port
+      - "7890:80"  # Change 3001 to your preferred port
     volumes:
       # Mount config.json from your NAS
       # Update the path on the left side to where you'll store config.json
