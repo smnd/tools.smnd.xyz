@@ -15,3 +15,6 @@ dist/
 # Editor
 .vscode/
 .idea/
+
+# App-specific sensitive files
+apps/portainer/public/config.json

@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  portainer-updater:
+    container_name: portainer-updater
+    image: portainer-updater:latest
+    build:
+      context: ../../
+      dockerfile: apps/portainer/Dockerfile
+    ports:
+      - "3001:80"  # Change 3001 to your preferred port
+    volumes:
+      # Mount config.json from your NAS
+      # Update the path on the left side to where you'll store config.json
+      - /volume1/docker/portainer-updater/config.json:/usr/share/nginx/html/config.json:ro
+    restart: unless-stopped
+    networks:
+      - portainer-net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+networks:
+  portainer-net:
+    driver: bridge

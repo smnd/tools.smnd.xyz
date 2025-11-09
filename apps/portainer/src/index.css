@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+  }
+}
+
+/* App base layout */
+html, body, #root {
+  height: 100%;
+}
+
+/* Hint UA to render native controls in appropriate theme */
+html { color-scheme: light; }
+.dark { color-scheme: dark; }
+
+body {
+  @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure native pickers adopt dark theme when expanded */
+.dark input[type="date"],
+.dark input[type="time"],
+.dark input[type="password"],
+.dark select {
+  color-scheme: dark;
+}
