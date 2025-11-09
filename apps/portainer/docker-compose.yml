@@ -12,7 +12,7 @@ services:
     volumes:
       # Mount config.json from your NAS
       # Update the path on the left side to where you'll store config.json
-      - /volume1/docker/portainer-updater/config.json:/usr/share/nginx/html/config.json:ro
+      - /volume2/docker/portainer-updater/config.json:/usr/share/nginx/html/config.json:ro
     restart: unless-stopped
     networks:
       - portainer-net
