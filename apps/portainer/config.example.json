@@ -3,26 +3,214 @@
   "backend_url": "",
   "webhooks": [
     {
-      "name": "Nginx Web Server",
-      "type": "container",
-      "stack": "web-stack",
-      "image": "nginx:latest",
-      "container_name": "nginx",
-      "webhook_url": "https://portainer.example.com/api/webhooks/00000000-0000-0000-0000-000000000001"
-    },
-    {
-      "name": "PostgreSQL Database",
-      "type": "container",
-      "stack": "database-stack",
-      "image": "postgres:15",
-      "container_name": "postgres",
-      "webhook_url": "https://portainer.example.com/api/webhooks/00000000-0000-0000-0000-000000000002"
-    },
-    {
-      "name": "Application Stack",
+      "name": "Change Detection Stack",
       "type": "stack",
-      "stack": "app-stack",
-      "webhook_url": "https://portainer.example.com/api/webhooks/00000000-0000-0000-0000-000000000003"
+      "stack": "changedetection",
+      "webhook_url": ""
+    },
+    {
+      "name": "Change Detection",
+      "type": "container",
+      "stack": "changedetection",
+      "image": "dgtlmoon/changedetection.io",
+      "container_name": "changedetection",
+      "webhook_url": ""
+    },
+    {
+      "name": "Browserless Chrome",
+      "type": "container",
+      "stack": "changedetection",
+      "image": "browserless/chrome:latest",
+      "container_name": "browserless-chrome",
+      "webhook_url": ""
+    },
+    {
+      "name": "Diun",
+      "type": "container",
+      "stack": "diun",
+      "image": "crazymax/diun:latest",
+      "container_name": "diun",
+      "webhook_url": ""
+    },
+    {
+      "name": "Downloader Stack",
+      "type": "stack",
+      "stack": "downloader",
+      "webhook_url": ""
+    },
+    {
+      "name": "Gluetun VPN",
+      "type": "container",
+      "stack": "downloader",
+      "image": "qmcgaw/gluetun:latest",
+      "container_name": "gluetun",
+      "webhook_url": ""
+    },
+    {
+      "name": "qBittorrent",
+      "type": "container",
+      "stack": "downloader",
+      "image": "linuxserver/qbittorrent:latest",
+      "container_name": "qbittorrent",
+      "webhook_url": ""
+    },
+    {
+      "name": "Prowlarr",
+      "type": "container",
+      "stack": "downloader",
+      "image": "linuxserver/prowlarr:latest",
+      "container_name": "prowlarr",
+      "webhook_url": ""
+    },
+    {
+      "name": "Overseerr",
+      "type": "container",
+      "stack": "media",
+      "image": "sctx/overseerr:latest",
+      "container_name": "overseerr",
+      "webhook_url": ""
+    },
+    {
+      "name": "Sonarr",
+      "type": "container",
+      "stack": "media",
+      "image": "linuxserver/sonarr:latest",
+      "container_name": "sonarr",
+      "webhook_url": ""
+    },
+    {
+      "name": "Radarr",
+      "type": "container",
+      "stack": "media",
+      "image": "linuxserver/radarr:latest",
+      "container_name": "radarr",
+      "webhook_url": ""
+    },
+    {
+      "name": "Bazarr",
+      "type": "container",
+      "stack": "media",
+      "image": "linuxserver/bazarr:version-v1.4.5",
+      "container_name": "bazarr",
+      "webhook_url": ""
+    },
+    {
+      "name": "Lidarr",
+      "type": "container",
+      "stack": "media",
+      "image": "linuxserver/lidarr:latest",
+      "container_name": "lidarr",
+      "webhook_url": ""
+    },
+    {
+      "name": "Audiobookshelf",
+      "type": "container",
+      "stack": "media",
+      "image": "ghcr.io/advplyr/audiobookshelf:latest",
+      "container_name": "audiobookshelf",
+      "webhook_url": ""
+    },
+    {
+      "name": "Jellyfin",
+      "type": "container",
+      "stack": "media",
+      "image": "jellyfin/jellyfin:latest",
+      "container_name": "jellyfin",
+      "webhook_url": ""
+    },
+    {
+      "name": "MeTube",
+      "type": "container",
+      "stack": "media",
+      "image": "ghcr.io/alexta69/metube:latest",
+      "container_name": "metube",
+      "webhook_url": ""
+    },
+    {
+      "name": "Stash",
+      "type": "container",
+      "stack": "media",
+      "image": "stashapp/stash:latest",
+      "container_name": "stash",
+      "webhook_url": ""
+    },
+    {
+      "name": "Nginx Proxy Manager",
+      "type": "container",
+      "stack": "nginx",
+      "image": "jc21/nginx-proxy-manager:latest",
+      "container_name": "nginx-proxy-manager",
+      "webhook_url": ""
+    },
+    {
+      "name": "Dozzle",
+      "type": "container",
+      "stack": "operations",
+      "image": "amir20/dozzle:latest",
+      "container_name": "dozzle",
+      "webhook_url": ""
+    },
+    {
+      "name": "Homarr",
+      "type": "container",
+      "stack": "operations",
+      "image": "ghcr.io/homarr-labs/homarr:latest",
+      "container_name": "homarr",
+      "webhook_url": ""
+    },
+    {
+      "name": "Dashdot",
+      "type": "container",
+      "stack": "operations",
+      "image": "mauricenino/dashdot",
+      "container_name": "dashdot",
+      "webhook_url": ""
+    },
+    {
+      "name": "Uptime Kuma",
+      "type": "container",
+      "stack": "operations",
+      "image": "louislam/uptime-kuma:1",
+      "container_name": "uptime-kuma",
+      "webhook_url": ""
+    },
+    {
+      "name": "Paperless Stack",
+      "type": "stack",
+      "stack": "paperless",
+      "webhook_url": ""
+    },
+    {
+      "name": "Paperless Redis",
+      "type": "container",
+      "stack": "paperless",
+      "image": "docker.io/library/redis:7",
+      "container_name": "paperless-redis",
+      "webhook_url": ""
+    },
+    {
+      "name": "Paperless PostgreSQL",
+      "type": "container",
+      "stack": "paperless",
+      "image": "docker.io/library/postgres:16",
+      "container_name": "paperless-db",
+      "webhook_url": ""
+    },
+    {
+      "name": "Paperless NGX",
+      "type": "container",
+      "stack": "paperless",
+      "image": "ghcr.io/paperless-ngx/paperless-ngx:latest",
+      "container_name": "paperless-server",
+      "webhook_url": ""
+    },
+    {
+      "name": "Pi-hole",
+      "type": "container",
+      "stack": "pihole",
+      "image": "pihole/pihole:latest",
+      "container_name": "pihole",
+      "webhook_url": ""
     }
   ]
 }

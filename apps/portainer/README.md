@@ -70,7 +70,7 @@ echo -n "your-pin" | shasum -a 256
    - **Name**: `portainer-updater`
    - **Repository URL**: `https://github.com/your-username/tools.smnd.xyz`
    - **Repository reference**: `refs/heads/main`
-   - **Compose path**: `apps/portainer/portainer-stack.yml`
+   - **Compose path**: `apps/portainer/docker-compose.yml`
 4. **Enable GitOps** ✅ (5 minute polling)
 5. **Deploy**
 
@@ -106,12 +106,7 @@ git push
 
 ## Documentation
 
-Choose your path:
-
 - 🚀 **[DOCKER_HUB_WORKFLOW.md](../../DOCKER_HUB_WORKFLOW.md)** - Build locally, deploy remotely (RECOMMENDED)
-- 📦 **[PORTAINER_GIT_DEPLOY.md](PORTAINER_GIT_DEPLOY.md)** - Deploy from Git with GitOps
-- ⚡ **[PORTAINER_QUICKSTART.md](PORTAINER_QUICKSTART.md)** - 10-minute quick start
-- 📚 **[PORTAINER_DEPLOYMENT.md](PORTAINER_DEPLOYMENT.md)** - Complete deployment guide
 - 🔔 **[DIUN_INTEGRATION.md](DIUN_INTEGRATION.md)** - Diun integration details
 - 🛠️ **[../portainer-backend/README.md](../portainer-backend/README.md)** - Backend technical docs
 
@@ -280,7 +275,7 @@ nano /volume1/docker/portainer-updater/config.json
 
 ```bash
 # Edit stack YAML
-vim apps/portainer/portainer-stack.yml
+vim apps/portainer/docker-compose.yml
 
 # Commit and push
 git commit -am "Update stack config"
@@ -298,7 +293,7 @@ git push
 netstat -tuln | grep 7890
 ```
 
-**Try different port in `portainer-stack.yml`:**
+**Try different port in `docker-compose.yml`:**
 ```yaml
 ports:
   - "8080:80"  # Change 7890 to 8080
