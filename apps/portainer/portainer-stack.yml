@@ -1,12 +1,15 @@
 version: '3.8'
 
 # Portainer Updater Stack
-# Deploy this via Portainer UI: Stacks → Add stack → Web editor
+# Deploy this via Portainer UI: Stacks → Add stack → Repository
+#
+# Docker Hub images - built locally and pushed via ./build-and-push.sh
+# See DOCKER_HUB_WORKFLOW.md for setup instructions
 
 services:
   # Backend - Handles Diun webhooks and stores updates
   backend:
-    image: portainer-updater-backend:latest
+    image: holmes221b/portainer-updater-backend:latest
     container_name: portainer-updater-backend
     restart: unless-stopped
     volumes:
@@ -35,7 +38,7 @@ services:
 
   # Frontend - Web UI served by nginx
   frontend:
-    image: portainer-updater:latest
+    image: holmes221b/portainer-updater:latest
     container_name: portainer-updater-frontend
     restart: unless-stopped
     ports:

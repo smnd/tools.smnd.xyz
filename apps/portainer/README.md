@@ -1,249 +1,452 @@
-# Portainer Updater
+# Portainer Updater with Diun Integration
 
-A simple web application to trigger Portainer stack and container updates via webhooks. Designed for self-hosting on your local network (Synology NAS or any Docker-capable device).
+Web interface to trigger Portainer webhook updates with automatic update detection via Diun.
 
 ## Features
 
-- **Simple UI**: Clean interface listing all your stacks and containers
-- **One-click updates**: Trigger Portainer webhooks with a single button click
-- **PIN authentication**: Protect your webhooks with a PIN (SHA-256 hashed)
-- **Search & filter**: Quickly find webhooks when you have many configured
-- **Dark mode**: Automatic theme switching
-- **Local network only**: Designed to run on your home network, not exposed to the internet
-
-## Security
-
-⚠️ **IMPORTANT SECURITY NOTES**
-
-1. **Config file is NOT committed to git** - Your actual `config.json` with webhook URLs is gitignored and should only exist on your NAS
-2. **Webhook URLs contain secrets** - These URLs have tokens that allow triggering updates without additional authentication
-3. **PIN protection** - The app requires a PIN (stored as SHA-256 hash) to access webhook triggers
-4. **Network isolation** - This app should only be accessible on your local network, not exposed to the internet
-5. **Session-based auth** - PIN is checked once per session and stored in sessionStorage
+- 🔔 **Auto-detect updates** - Diun webhook integration
+- 📦 **Batch updates** - Update multiple containers at once
+- 📚 **Stack grouping** - Group containers by stack with expand/collapse
+- 📊 **Update history** - Track all updates with timestamps
+- 🎯 **Manual webhooks** - Original one-click webhook triggers (backward compatible)
+- 🔐 **PIN authentication** - Secure access with SHA-256 hashing
+- 🌓 **Dark mode** - Light/dark/auto theme
+- 🔄 **GitOps** - Auto-deploy from Git via Portainer
 
 ## Quick Start
 
-### 1. Generate Your PIN Hash
+### 1. Setup Docker Hub (One Time)
 
 ```bash
-cd apps/portainer
-node generate-pin.js
+# Configure your Docker Hub username
+./setup-dockerhub.sh
+
+# Login to Docker Hub
+docker login
+
+# Build and push images
+./build-and-push.sh
 ```
 
-Enter your desired PIN when prompted, and you'll get a SHA-256 hash to use in your config.
+### 2. Prepare NAS Configuration
 
-### 2. Create Your Config File
+```bash
+# SSH into NAS or use File Station
+mkdir -p /volume1/docker/portainer-updater/data
 
-Create `config.json` on your NAS at `/volume1/docker/portainer-updater/config.json` (adjust path as needed):
+# Create config.json
+nano /volume1/docker/portainer-updater/config.json
+```
 
+Paste:
 ```json
 {
-  "pin": "your-sha256-hash-from-step-1",
+  "pin": "your-sha256-hash",
+  "backend_url": "http://portainer-updater-backend:3000",
   "webhooks": [
     {
-      "name": "Plex Media Server",
-      "type": "stack",
-      "url": "https://your-nas-ip:9443/api/stacks/webhooks/abc123..."
-    },
-    {
-      "name": "Homepage",
+      "name": "Nginx Web Server",
       "type": "container",
-      "url": "https://your-nas-ip:9443/api/webhooks/def456..."
+      "stack": "web-stack",
+      "image": "nginx:latest",
+      "container_name": "nginx",
+      "webhook_url": "https://portainer/api/webhooks/xxx"
     }
   ]
 }
 ```
 
-**How to get webhook URLs from Portainer:**
+Generate PIN hash:
+```bash
+echo -n "your-pin" | shasum -a 256
+# Or use: node apps/portainer/generate-pin.js
+```
 
-1. Open Portainer
-2. Go to **Stacks** (for stack webhooks) or **Containers** (for container webhooks)
-3. Click on your stack/container
-4. Scroll down to find the **Webhook** section
-5. Click "Create webhook" or copy the existing webhook URL
+### 3. Deploy in Portainer (Git Method)
 
-### 3. Deploy to Portainer
+1. **Portainer** → **Stacks** → **Add stack**
+2. **Build method**: **Repository** ⭐
+3. Fill in:
+   - **Name**: `portainer-updater`
+   - **Repository URL**: `https://github.com/your-username/tools.smnd.xyz`
+   - **Repository reference**: `refs/heads/main`
+   - **Compose path**: `apps/portainer/portainer-stack.yml`
+4. **Enable GitOps** ✅ (5 minute polling)
+5. **Deploy**
 
-#### Option A: Using Portainer Stacks UI
+### 4. Configure Diun (Optional)
 
-1. In Portainer, go to **Stacks** → **Add stack**
-2. Name it `portainer-updater`
-3. Choose **Repository** build method
-4. Repository URL: Your git repo URL
-5. Repository reference: `main` (or your branch)
-6. Compose path: `apps/portainer/docker-compose.yml`
-7. Add environment variables if needed
-8. Click **Deploy the stack**
+Add to your Diun stack/container:
+```yaml
+environment:
+  - DIUN_NOTIF_WEBHOOK_ENDPOINT=http://portainer-updater-backend:3000/api/diun/webhook
+  - DIUN_NOTIF_WEBHOOK_METHOD=POST
+networks:
+  - portainer-updater-net
+```
 
-#### Option B: Manual Docker Build & Run
-
-From the **repository root**:
+## Daily Workflow
 
 ```bash
-# Build the image
-docker build -f apps/portainer/Dockerfile -t portainer-updater:latest .
+# Make changes
+vim src/App.tsx
 
-# Run the container
-docker run -d \
-  --name portainer-updater \
-  -p 3001:80 \
-  -v /volume1/docker/portainer-updater/config.json:/usr/share/nginx/html/config.json:ro \
-  --restart unless-stopped \
-  portainer-updater:latest
+# Build and push to Docker Hub
+./build-and-push.sh
+
+# Commit changes (optional)
+git commit -am "Add new feature"
+git push
+
+# Portainer auto-updates (5 min via GitOps)
+# Or click "Pull and redeploy" in Portainer
 ```
 
-### 4. Access the App
+**No SSH to NAS, no building on NAS!** 🚀
 
-Open your browser and navigate to:
+## Documentation
+
+Choose your path:
+
+- 🚀 **[DOCKER_HUB_WORKFLOW.md](../../DOCKER_HUB_WORKFLOW.md)** - Build locally, deploy remotely (RECOMMENDED)
+- 📦 **[PORTAINER_GIT_DEPLOY.md](PORTAINER_GIT_DEPLOY.md)** - Deploy from Git with GitOps
+- ⚡ **[PORTAINER_QUICKSTART.md](PORTAINER_QUICKSTART.md)** - 10-minute quick start
+- 📚 **[PORTAINER_DEPLOYMENT.md](PORTAINER_DEPLOYMENT.md)** - Complete deployment guide
+- 🔔 **[DIUN_INTEGRATION.md](DIUN_INTEGRATION.md)** - Diun integration details
+- 🛠️ **[../portainer-backend/README.md](../portainer-backend/README.md)** - Backend technical docs
+
+## Architecture
+
+### Overview
 
 ```
-http://your-nas-ip:3001
+┌──────────────┐
+│  Local Dev   │  1. Make changes
+│  (Your Mac)  │  2. ./build-and-push.sh
+└──────┬───────┘
+       │
+       ↓ (push images)
+┌──────────────┐
+│  Docker Hub  │  3. Store images
+└──────┬───────┘
+       │
+       ↓ (Portainer GitOps pulls)
+┌──────────────┐     webhook     ┌───────────┐     stores     ┌─────────┐
+│     Diun     ├────────────────>│  Backend  ├───────────────>│ SQLite  │
+└──────────────┘                 └─────┬─────┘                └─────────┘
+                                       │
+                                       ↓ (REST API)
+                                 ┌─────────────┐
+                                 │   Web UI    │
+                                 │  (Frontend) │
+                                 └──────┬──────┘
+                                        │
+                                        ↓ (trigger webhooks)
+                                 ┌──────────────┐
+                                 │  Portainer   │
+                                 │  (on NAS)    │
+                                 └──────────────┘
 ```
 
-Enter your PIN to unlock and start triggering updates!
+### Components
+
+**Backend Service:**
+- Node.js + Express + TypeScript
+- Receives Diun webhooks
+- Stores updates in SQLite
+- REST API for frontend
+- PIN authentication
+
+**Frontend App:**
+- React 19 + TypeScript + Vite
+- Auto-detected updates tab (from Diun)
+- Manual webhooks tab (original)
+- Update history modal
+- Batch & stack operations
+
+**Deployment:**
+- Docker Hub for image hosting
+- Portainer for orchestration
+- GitOps for auto-updates
+- No git needed on NAS!
+
+## Tech Stack
+
+**Backend:**
+- Node.js 20
+- Express 4
+- TypeScript 5
+- SQLite (better-sqlite3)
+- Zod validation
+
+**Frontend:**
+- React 19
+- TypeScript 5
+- Vite 7
+- Tailwind CSS 3
+- Radix UI primitives
+- Shared @tools/ui components
+
+**Deployment:**
+- Docker + Docker Compose
+- Docker Hub
+- Portainer
+- GitOps
+
+## Configuration
+
+### config.json Structure
+
+```json
+{
+  "pin": "SHA-256 hash",
+  "backend_url": "http://portainer-updater-backend:3000",
+  "webhooks": [
+    {
+      "name": "Display name",
+      "type": "container" | "stack",
+      "stack": "stack-name (optional, for grouping)",
+      "image": "nginx:latest (for Diun matching)",
+      "container_name": "nginx (for Diun matching)",
+      "webhook_url": "https://portainer/api/webhooks/xxx"
+    }
+  ]
+}
+```
+
+### Key Fields Explained
+
+- **pin** - SHA-256 hash of your PIN (use `generate-pin.js` or `echo -n "pin" | shasum -a 256`)
+- **backend_url** - Backend service URL (use Docker service name)
+- **image** - Docker image name, must match what Diun sees (e.g., `nginx:latest`, `postgres:15`)
+- **container_name** - Container name, helps with specific matching
+- **stack** - Groups containers for batch operations
+- **webhook_url** - Portainer webhook URL (get from Portainer UI)
+
+### Environment Variables (.env)
+
+```bash
+DOCKER_HUB_USERNAME=your-dockerhub-username
+BACKEND_TAG=latest
+FRONTEND_TAG=latest
+```
+
+## Scripts
+
+Repository root:
+- `setup-dockerhub.sh` - Configure Docker Hub username
+- `build-and-push.sh` - Build and push images to Docker Hub
+
+App directory:
+- `build-images.sh` - Build images locally (old method, for manual NAS builds)
+- `generate-pin.js` - Generate SHA-256 PIN hash
+
+## Ports
+
+- **7890** - Frontend web UI (configurable in stack YAML)
+- **3000** - Backend API (internal only, not exposed)
+
+## Updating
+
+### Update Application Code
+
+```bash
+# Make changes
+vim src/App.tsx
+
+# Build and push
+./build-and-push.sh
+
+# Commit (optional)
+git commit -am "Update feature"
+git push
+
+# Portainer auto-updates via GitOps (5 min)
+# Or manually: Stacks → portainer-updater → Pull and redeploy
+```
+
+### Update Configuration
+
+```bash
+# Edit config.json on NAS
+ssh admin@nas-ip
+nano /volume1/docker/portainer-updater/config.json
+
+# Changes are picked up automatically
+# Backend reloads config on each request
+```
+
+### Update Stack Configuration
+
+```bash
+# Edit stack YAML
+vim apps/portainer/portainer-stack.yml
+
+# Commit and push
+git commit -am "Update stack config"
+git push
+
+# Portainer auto-updates via GitOps (5 min)
+```
+
+## Troubleshooting
+
+### Can't Access Web UI
+
+**Check port:**
+```bash
+netstat -tuln | grep 7890
+```
+
+**Try different port in `portainer-stack.yml`:**
+```yaml
+ports:
+  - "8080:80"  # Change 7890 to 8080
+```
+
+**Check firewall** (Synology/QNAP)
+
+### No Updates Showing
+
+**Check Diun network:**
+```bash
+docker network inspect portainer-updater-net
+# Should show both Diun and backend containers
+```
+
+**Check backend logs:**
+```bash
+docker logs portainer-updater-backend | grep webhook
+```
+
+**Verify image names match:**
+```bash
+# What Diun sees:
+docker logs diun | grep "image:"
+
+# What's in config.json:
+cat /volume1/docker/portainer-updater/config.json | grep "image"
+
+# Must match exactly!
+```
+
+### Images Not Updating
+
+**Force pull in Portainer:**
+- Stacks → portainer-updater → Pull and redeploy
+- Enable "Re-pull images"
+
+**Or use image digest:**
+```yaml
+image: username/portainer-updater@sha256:abc123...
+```
+
+### Build Fails
+
+**Check Docker version:**
+```bash
+docker --version
+# Need 20.10+
+```
+
+**Check disk space:**
+```bash
+df -h
+# Need 2GB+ free
+```
+
+## Security
+
+⚠️ **Important Security Notes:**
+
+1. **Config file not in git** - `config.json` contains secrets (webhook URLs with auth tokens)
+2. **PIN protection** - SHA-256 hashed PIN required for access
+3. **Session auth** - PIN checked once per session (sessionStorage)
+4. **Local network only** - Not designed for internet exposure
+5. **HTTPS recommended** - Use reverse proxy with SSL/TLS
+6. **Webhook rotation** - Regenerate Portainer webhooks periodically
+
+### Best Practices
+
+- Use strong PIN (8+ characters)
+- Don't expose port 7890 to internet
+- Use HTTPS via reverse proxy
+- Keep Docker images updated
+- Back up config.json and database
+- Use private Docker Hub repos (if needed)
 
 ## Development
 
 ### Local Development
 
 ```bash
-# From repository root
+# Install dependencies
 pnpm install
+
+# Run frontend (no backend needed for basic testing)
 pnpm dev:portainer
-```
 
-For local development, copy `public/config.example.json` to `public/config.json` and add your own webhook URLs.
+# Run backend
+cd apps/portainer-backend
+pnpm dev
 
-### Build
-
-```bash
+# Build for production
 pnpm build:portainer
 ```
 
-## Configuration Reference
+### Local Testing with Backend
 
-### Config Structure
+```bash
+# Start backend
+cd apps/portainer-backend
+pnpm dev
 
-```json
-{
-  "pin": "SHA-256 hash of your PIN",
-  "webhooks": [
-    {
-      "name": "Display name for your stack/container",
-      "type": "stack | container",
-      "url": "Full Portainer webhook URL"
-    }
-  ]
-}
+# In another terminal, start frontend
+pnpm dev:portainer
+
+# Create local config
+cp apps/portainer/config.example.json apps/portainer/public/config.json
+nano apps/portainer/public/config.json
 ```
 
-### Config Fields
+## Backup
 
-- **pin** (string, required): SHA-256 hash of your PIN (use `generate-pin.js` to create)
-- **webhooks** (array, required): List of webhook configurations
-  - **name** (string): Display name shown in the UI
-  - **type** (string): Either `"stack"` or `"container"`
-  - **url** (string): Full Portainer webhook URL
+### Configuration
 
-### Example with Multiple Webhooks
-
-```json
-{
-  "pin": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
-  "webhooks": [
-    {
-      "name": "Media Stack",
-      "type": "stack",
-      "url": "https://192.168.1.100:9443/api/stacks/webhooks/..."
-    },
-    {
-      "name": "Plex Container",
-      "type": "container",
-      "url": "https://192.168.1.100:9443/api/webhooks/..."
-    },
-    {
-      "name": "Sonarr Container",
-      "type": "container",
-      "url": "https://192.168.1.100:9443/api/webhooks/..."
-    }
-  ]
-}
+```bash
+cp /volume1/docker/portainer-updater/config.json \
+   /volume1/docker/portainer-updater/config.json.backup
 ```
 
-## Docker Compose Reference
+### Database
 
-The `docker-compose.yml` file includes:
-
-- **Port mapping**: Change `3001:80` to your preferred port
-- **Volume mount**: Update the left side of the volume mount to match where you store `config.json` on your NAS
-- **Health checks**: Automatic container health monitoring
-- **Restart policy**: Container restarts unless explicitly stopped
-
-Example modifications:
-
-```yaml
-ports:
-  - "8080:80"  # Use port 8080 instead
-
-volumes:
-  # If you store config in a different location:
-  - /mnt/data/configs/portainer-updater/config.json:/usr/share/nginx/html/config.json:ro
+```bash
+docker stop portainer-updater-backend
+cp /volume1/docker/portainer-updater/data/updates.db \
+   /volume1/docker/portainer-updater/data/updates.db.backup
+docker start portainer-updater-backend
 ```
 
-## Troubleshooting
+### Automated Backup
 
-### "Config file not found" error
+Use Synology Task Scheduler or cron:
+```bash
+0 2 * * * docker stop portainer-updater-backend && \
+          cp /volume1/docker/portainer-updater/data/updates.db \
+             /volume1/docker/backups/updates-$(date +\%Y\%m\%d).db && \
+          docker start portainer-updater-backend
+```
 
-- Ensure `config.json` exists at the path specified in the volume mount
-- Check file permissions (should be readable by the nginx user in the container)
-- Verify the volume mount path in `docker-compose.yml` is correct for your system
+## Support
 
-### PIN doesn't work
-
-- Regenerate your PIN hash using `generate-pin.js`
-- Ensure there are no extra spaces or newlines in the hash in `config.json`
-- Clear your browser's sessionStorage and try again
-
-### Webhook trigger fails
-
-- Check that the webhook URL is correct and complete
-- Verify your Portainer instance is accessible from the container
-- Check Portainer logs for any errors
-- Ensure the webhook hasn't been deleted in Portainer
-
-### Can't access from other devices on network
-
-- Verify the port mapping in docker-compose.yml
-- Check your NAS firewall settings
-- Ensure the container is running: `docker ps | grep portainer-updater`
-
-## Security Best Practices
-
-1. **Never commit `config.json`** - It's already in `.gitignore`, keep it that way
-2. **Use a strong PIN** - At least 6 characters, mix of numbers and letters recommended
-3. **Keep it local** - Don't expose this app to the internet via port forwarding or reverse proxy
-4. **Regular updates** - Rebuild the Docker image periodically to get security updates
-5. **HTTPS on NAS** - If possible, access the app via HTTPS through a reverse proxy on your NAS
-6. **Webhook rotation** - Periodically regenerate your Portainer webhooks
-7. **Limit access** - Use your router's VLAN features to limit which devices can access this app
-
-## Tech Stack
-
-- **React 19** - UI framework
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Styling
-- **Vite** - Build tool
-- **Nginx** - Web server in Docker container
-- **@tools/ui** - Shared component library from monorepo
+- **Backend docs:** [../portainer-backend/README.md](../portainer-backend/README.md)
+- **Workflow guide:** [../../DOCKER_HUB_WORKFLOW.md](../../DOCKER_HUB_WORKFLOW.md)
+- **Issues:** GitHub Issues
 
 ## License
 
-Part of the tools.smnd.xyz monorepo. See repository root for license information.
-
-## Contributing
-
-This is part of a larger monorepo. See `CONTRIBUTING.md` in the repository root.
+MIT - Part of tools.smnd.xyz monorepo
 
 ---
 
-**Made with ❤️ for simplifying Portainer stack management**
+**Made with ❤️ for simplifying Docker updates**
