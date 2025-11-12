@@ -73,6 +73,10 @@ services:
 #     driver: bridge
 #     name: portainer-updater-net
 
+networks:
+    dockerbridge:
+      external: true
+
 # DEPLOYMENT CHECKLIST:
 # ☐ 1. Create directory: mkdir -p /volume2/docker/portainer-updater/data
 # ☐ 2. Create config.json in /volume2/docker/portainer-updater/
