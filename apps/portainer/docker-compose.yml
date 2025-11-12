@@ -32,6 +32,8 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    ports:
+      - "3000:3000"
     labels:
       - "com.centurylinklabs.watchtower.enable=false"  # Exclude from Watchtower
       - "com.portainer.updater.role=backend"
