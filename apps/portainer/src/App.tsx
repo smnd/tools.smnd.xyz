@@ -241,7 +241,16 @@ function App() {
     setPinInput('')
   }
 
+  const isWebhookConfigured = (webhook: Webhook): boolean => {
+    return !!(webhook.webhook_url && webhook.webhook_url.trim())
+  }
+
   const triggerWebhook = async (webhook: Webhook) => {
+    if (!isWebhookConfigured(webhook)) {
+      addToast(`✗ ${webhook.name} has no webhook URL configured`, 'error')
+      return
+    }
+
     setLoadingWebhooks(prev => new Set(prev).add(webhook.webhook_url))
 
     try {
@@ -549,11 +558,13 @@ function App() {
                     </div>
                     <Button
                       onClick={() => triggerWebhook(webhook)}
-                      disabled={loadingWebhooks.has(webhook.webhook_url)}
+                      disabled={!isWebhookConfigured(webhook) || loadingWebhooks.has(webhook.webhook_url)}
                       size="sm"
                       className="flex-shrink-0"
                     >
-                      {loadingWebhooks.has(webhook.webhook_url) ? (
+                      {!isWebhookConfigured(webhook) ? (
+                        'No webhook defined'
+                      ) : loadingWebhooks.has(webhook.webhook_url) ? (
                         <>
                           <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                           Updating...
