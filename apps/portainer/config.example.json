@@ -14,7 +14,7 @@
       "name": "PostgreSQL Database",
       "type": "container",
       "stack": "database-stack",
-      "image": "postgres:15",
+      "image": "changedetection.io",
       "container_name": "postgres",
       "webhook_url": "https://portainer.example.com/api/webhooks/00000000-0000-0000-0000-000000000002"
     },
