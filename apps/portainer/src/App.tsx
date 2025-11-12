@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { ThemeToggle, Footer, getStoredTheme, setStoredTheme, applyTheme, watchSystemTheme, type Theme, Button, Input } from '@tools/ui'
 import { Search, RefreshCw, Lock, CheckCircle2, XCircle, Container, Layers, Bell, Clock } from 'lucide-react'
 import { ApiClient } from './lib/api'
