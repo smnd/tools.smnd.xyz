@@ -34,6 +34,7 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV DATA_DIR=/app/data
 ENV CONFIG_PATH=/app/config.json
+ENV NODE_TLS_REJECT_UNAUTHORIZED=0
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

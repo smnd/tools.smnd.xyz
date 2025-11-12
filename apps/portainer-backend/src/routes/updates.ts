@@ -9,25 +9,45 @@ const router: ExpressRouter = Router();
 // Helper to trigger a Portainer webhook
 async function triggerWebhook(webhookUrl: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const response = await fetch(webhookUrl, {
+    console.log(`Triggering webhook: ${webhookUrl}`);
+
+    // For HTTPS URLs with self-signed certificates, disable certificate validation
+    const fetchOptions: RequestInit = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-    });
+    };
+
+    // Disable certificate validation for HTTPS (needed for self-signed certs on NAS)
+    if (webhookUrl.startsWith('https://')) {
+      const https = await import('https');
+      (fetchOptions as any).agent = new https.Agent({
+        rejectUnauthorized: false,
+      });
+    }
+
+    const response = await fetch(webhookUrl, fetchOptions);
+
+    console.log(`Webhook response: ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
+      const errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+      console.error(`Webhook failed: ${errorMsg}`);
       return {
         success: false,
-        error: `HTTP ${response.status}: ${response.statusText}`,
+        error: errorMsg,
       };
     }
 
+    console.log('Webhook triggered successfully');
     return { success: true };
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`Webhook error: ${errorMsg}`, error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMsg,
     };
   }
 }
@@ -53,7 +73,9 @@ function mapUpdateToResponse(update: Update): UpdateResponse {
 router.get('/', authenticatePin, (_req: Request, res: Response) => {
   try {
     const updates = statements.getPendingUpdates.all() as Update[];
+    console.log(`Found ${updates.length} pending updates:`, updates);
     const response = updates.map(mapUpdateToResponse);
+    console.log('Mapped response:', response);
 
     res.json(response);
   } catch (error) {

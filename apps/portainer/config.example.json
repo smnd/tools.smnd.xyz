@@ -1,6 +1,6 @@
 {
   "pin": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
-  "backend_url": "http://portainer-updater-backend:3000",
+  "backend_url": "",
   "webhooks": [
     {
       "name": "Nginx Web Server",
@@ -14,7 +14,7 @@
       "name": "PostgreSQL Database",
       "type": "container",
       "stack": "database-stack",
-      "image": "changedetection.io",
+      "image": "postgres:15",
       "container_name": "postgres",
       "webhook_url": "https://portainer.example.com/api/webhooks/00000000-0000-0000-0000-000000000002"
     },

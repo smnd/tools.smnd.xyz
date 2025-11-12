@@ -28,7 +28,7 @@ FROM nginx:alpine
 # Copy built files from builder
 COPY --from=builder /app/apps/portainer/dist /usr/share/nginx/html
 
-# Copy nginx configuration (optional - nginx default works fine for SPA)
+# Copy nginx configuration with API proxy
 RUN echo 'server { \
     listen 80; \
     server_name _; \
@@ -42,6 +42,13 @@ RUN echo 'server { \
         add_header Cache-Control "no-cache, no-store, must-revalidate"; \
         add_header Pragma "no-cache"; \
         add_header Expires 0; \
+    } \
+    location /api/ { \
+        proxy_pass http://portainer-updater-backend:3000; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $scheme; \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
