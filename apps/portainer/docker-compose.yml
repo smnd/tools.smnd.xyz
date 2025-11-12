@@ -1,64 +1,88 @@
 version: '3.8'
 
-# DEPRECATED: This file is kept for local development only
-# For production deployment, use portainer-stack.yml via Portainer's Git deployment
-# See DOCKER_HUB_WORKFLOW.md for the recommended deployment method
+# Portainer Updater Stack
+# Deploy this via Portainer UI: Stacks → Add stack → Repository
+#
+# Docker Hub images - built locally and pushed via ./build-and-push.sh
+# See DOCKER_HUB_WORKFLOW.md for setup instructions
 
 services:
-  # Backend service - handles Diun webhooks and stores update info
-  portainer-updater-backend:
-    container_name: portainer-updater-backend
+  # Backend - Handles Diun webhooks and stores updates
+  backend:
     image: holmes221b/portainer-updater-backend:latest
-    # Uncomment to build locally instead of pulling from Docker Hub:
-    # build:
-    #   context: ../../
-    #   dockerfile: apps/portainer-backend/Dockerfile
+    container_name: portainer-updater-backend
+    restart: unless-stopped
     volumes:
-      # SQLite database storage - update path as needed
+      # UPDATE THESE PATHS to match your NAS structure
+      # Synology: /volume1/ or /volume2/
+      # QNAP: /share/Container/
+      # Other: /mnt/storage/
       - /volume2/docker/portainer-updater/data:/app/data
-      # Shared config.json with frontend
       - /volume2/docker/portainer-updater/config.json:/app/config.json:ro
     environment:
       - NODE_ENV=production
       - PORT=3000
       - DATA_DIR=/app/data
       - CONFIG_PATH=/app/config.json
-    restart: unless-stopped
     networks:
-      - portainer-net
+      - portainer-updater-net
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 5s
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"  # Exclude from Watchtower
+      - "com.portainer.updater.role=backend"
 
-  # Frontend service - React app served by nginx
-  portainer-updater:
-    container_name: portainer-updater
+  # Frontend - Web UI served by nginx
+  frontend:
     image: holmes221b/portainer-updater:latest
-    # Uncomment to build locally instead of pulling from Docker Hub:
-    # build:
-    #   context: ../../
-    #   dockerfile: apps/portainer/Dockerfile
-    ports:
-      - "7890:80"  # Change 7890 to your preferred port
-    volumes:
-      # Mount config.json from your NAS
-      # Update the path on the left side to where you'll store config.json
-      - /volume2/docker/portainer-updater/config.json:/usr/share/nginx/html/config.json:ro
-    depends_on:
-      - portainer-updater-backend
+    container_name: portainer-updater-frontend
     restart: unless-stopped
+    ports:
+      # Change 7890 to your preferred port
+      - "7890:80"
+    volumes:
+      # UPDATE THIS PATH to match your NAS structure
+      - /volume2/docker/portainer-updater/config.json:/usr/share/nginx/html/config.json:ro
+    environment:
+      # Optional: Set timezone
+      - TZ=Asia/Singapore
+    depends_on:
+      - backend
     networks:
-      - portainer-net
+      - portainer-updater-net
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 10s
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"  # Exclude from Watchtower
+      - "com.portainer.updater.role=frontend"
 
 networks:
-  portainer-net:
+  portainer-updater-net:
     driver: bridge
+    name: portainer-updater-net
+
+# DEPLOYMENT CHECKLIST:
+# ☐ 1. Create directory: mkdir -p /volume2/docker/portainer-updater/data
+# ☐ 2. Create config.json in /volume2/docker/portainer-updater/
+# ☐ 3. Generate PIN hash: echo -n "your-pin" | shasum -a 256
+# ☐ 4. Update volume paths above to match your NAS
+# ☐ 5. Build images on NAS (see PORTAINER_DEPLOYMENT.md)
+# ☐ 6. Deploy this stack in Portainer
+# ☐ 7. Connect Diun to portainer-updater-net network
+# ☐ 8. Test at http://your-nas-ip:7890
+
+# DIUN CONFIGURATION:
+# Add these to your Diun container/stack:
+#   environment:
+#     - DIUN_NOTIF_WEBHOOK_ENDPOINT=http://portainer-updater-backend:3000/api/diun/webhook
+#     - DIUN_NOTIF_WEBHOOK_METHOD=POST
+#   networks:
+#     - portainer-updater-net
