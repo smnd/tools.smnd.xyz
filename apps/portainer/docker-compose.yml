@@ -24,9 +24,10 @@ services:
       - PORT=3000
       - DATA_DIR=/app/data
       - CONFIG_PATH=/app/config.json
-    networks:
-      # - portainer-updater-net
-      - dockerbridge
+    # networks:
+    #   # - portainer-updater-net
+    #   - dockerbridge
+    network_mode: dockerbridge
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
@@ -55,9 +56,10 @@ services:
       - TZ=Asia/Singapore
     depends_on:
       - backend
-    networks:
-      # - portainer-updater-net
-      - dockerbridge
+    network_mode: dockerbridge
+    # networks:
+    #   # - portainer-updater-net
+    #   - dockerbridge
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
       interval: 30s
@@ -73,9 +75,9 @@ services:
 #     driver: bridge
 #     name: portainer-updater-net
 
-networks:
-    dockerbridge:
-      external: true
+# networks:
+#     dockerbridge:
+#       external: true
 
 # DEPLOYMENT CHECKLIST:
 # ☐ 1. Create directory: mkdir -p /volume2/docker/portainer-updater/data
