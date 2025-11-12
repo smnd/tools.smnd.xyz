@@ -63,6 +63,7 @@ echo ""
 echo -e "${BLUE}📦 Building Backend Image...${NC}"
 echo "-------------------------------------------"
 docker build \
+    --platform linux/amd64 \
     -t $DOCKER_HUB_USERNAME/portainer-updater-backend:$BACKEND_TAG \
     -f apps/portainer-backend/Dockerfile \
     .
@@ -78,6 +79,7 @@ echo ""
 echo -e "${BLUE}📦 Building Frontend Image...${NC}"
 echo "-------------------------------------------"
 docker build \
+    --platform linux/amd64 \
     -t $DOCKER_HUB_USERNAME/portainer-updater:$FRONTEND_TAG \
     -f apps/portainer/Dockerfile \
     .
