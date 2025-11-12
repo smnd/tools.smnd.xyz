@@ -13,13 +13,14 @@ export const DiunWebhookSchema = z.object({
   created: z.string().optional(),
   platform: z.string().optional(),
   metadata: z.object({
-    container_id: z.string().optional(),
-    container_name: z.string().optional(),
-    command: z.string().optional(),
-    state: z.string().optional(),
-    health: z.string().optional(),
-    size: z.number().optional(),
-  }).optional(),
+    ctn_id: z.string().optional(),
+    ctn_names: z.string().optional(),
+    ctn_command: z.string().optional(),
+    ctn_state: z.string().optional(),
+    ctn_status: z.string().optional(),
+    ctn_size: z.string().optional(),
+    ctn_createdat: z.string().optional(),
+  }).nullish(),
 });
 
 export type DiunWebhook = z.infer<typeof DiunWebhookSchema>;

@@ -20,12 +20,12 @@ router.post('/webhook', async (req: Request, res: Response) => {
     const payload = result.data;
     console.log('Received Diun webhook:', {
       image: payload.image,
-      container: payload.metadata?.container_name,
+      container: payload.metadata?.ctn_names,
       digest: payload.digest,
     });
 
     // Find matching webhook configuration
-    const containerName = payload.metadata?.container_name;
+    const containerName = payload.metadata?.ctn_names;
     const webhookConfig = findWebhookForImage(payload.image, containerName);
 
     if (!webhookConfig) {
@@ -44,7 +44,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
       statements.insertUpdate.run(
         payload.image,
         containerName || null,
-        payload.metadata?.container_id || null,
+        payload.metadata?.ctn_id || null,
         webhookConfig.stack || null,
         null, // current_digest (we don't track this)
         payload.digest,
