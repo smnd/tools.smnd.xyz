@@ -1,6 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { ThemeToggle, Footer, getStoredTheme, setStoredTheme, applyTheme, watchSystemTheme, type Theme, Button, Input } from '@tools/ui'
-import { Search, RefreshCw, Lock, CheckCircle2, XCircle, Container, Layers } from 'lucide-react'
+import { Search, RefreshCw, Lock, CheckCircle2, XCircle, Container, Layers, Bell, Clock } from 'lucide-react'
+import { ApiClient } from './lib/api'
+import { UpdatesList } from './components/UpdatesList'
+import { UpdateHistory } from './components/UpdateHistory'
+import type { Update } from './lib/types'
 import './App.css'
 
 interface Webhook {
@@ -11,6 +15,7 @@ interface Webhook {
 
 interface Config {
   pin: string
+  backend_url?: string
   webhooks: Webhook[]
 }
 
@@ -37,6 +42,13 @@ function App() {
   const [loadingWebhooks, setLoadingWebhooks] = useState<Set<string>>(new Set())
   const [toasts, setToasts] = useState<Toast[]>([])
   const [configError, setConfigError] = useState<string | null>(null)
+
+  // Diun integration state
+  const [updates, setUpdates] = useState<Update[]>([])
+  const [loadingUpdates, setLoadingUpdates] = useState(false)
+  const [activeTab, setActiveTab] = useState<'auto' | 'manual'>('auto')
+  const [showHistory, setShowHistory] = useState(false)
+  const [apiClient] = useState(() => new ApiClient(config?.backend_url || 'http://localhost:3000'))
 
   // Initialize and manage theme
   useEffect(() => {
@@ -73,6 +85,35 @@ function App() {
     }
   }, [])
 
+  // Load updates from backend when authenticated
+  const loadUpdates = async () => {
+    if (!isAuthenticated || !config?.backend_url) return
+
+    try {
+      setLoadingUpdates(true)
+      const data = await apiClient.getUpdates()
+      setUpdates(data)
+
+      // Auto-switch to auto tab if there are updates
+      if (data.length > 0 && activeTab === 'manual') {
+        setActiveTab('auto')
+      }
+    } catch (error) {
+      console.error('Failed to load updates:', error)
+    } finally {
+      setLoadingUpdates(false)
+    }
+  }
+
+  // Poll for updates every 30 seconds
+  useEffect(() => {
+    if (!isAuthenticated || !config?.backend_url) return
+
+    loadUpdates()
+    const interval = setInterval(loadUpdates, 30000)
+    return () => clearInterval(interval)
+  }, [isAuthenticated, config?.backend_url])
+
   // Toast management
   const addToast = (message: string, type: 'success' | 'error') => {
     const id = Date.now()
@@ -90,6 +131,7 @@ function App() {
     if (hashedPin === config.pin) {
       setIsAuthenticated(true)
       sessionStorage.setItem('portainer_authed', 'true')
+      apiClient.setPinHash(hashedPin)
       setPinInput('')
     } else {
       addToast('Incorrect PIN', 'error')
@@ -124,6 +166,44 @@ function App() {
         next.delete(webhook.url)
         return next
       })
+    }
+  }
+
+  // Handlers for Diun updates
+  const handleTriggerUpdate = async (updateId: number) => {
+    try {
+      const update = updates.find(u => u.id === updateId)
+      await apiClient.triggerUpdate(updateId)
+      addToast(`✓ ${update?.containerName || update?.image} update triggered`, 'success')
+      await loadUpdates() // Refresh list
+    } catch (error) {
+      addToast(`✗ Failed to trigger update: ${error}`, 'error')
+      throw error
+    }
+  }
+
+  const handleTriggerBatch = async (updateIds: number[]) => {
+    try {
+      const result = await apiClient.triggerBatch(updateIds)
+      if (result.success) {
+        addToast(`✓ Triggered ${result.summary.succeeded} update(s)`, 'success')
+      } else {
+        addToast(`⚠ Triggered ${result.summary.succeeded}/${result.summary.total} updates`, 'error')
+      }
+      await loadUpdates() // Refresh list
+    } catch (error) {
+      addToast(`✗ Failed to trigger batch update: ${error}`, 'error')
+      throw error
+    }
+  }
+
+  const handleDismissUpdate = async (updateId: number) => {
+    try {
+      await apiClient.dismissUpdate(updateId)
+      await loadUpdates() // Refresh list
+    } catch (error) {
+      addToast(`✗ Failed to dismiss update: ${error}`, 'error')
+      throw error
     }
   }
 
@@ -266,75 +346,135 @@ function App() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto p-4 md:p-6 w-full">
-        {/* Search */}
-        {config.webhooks.length > 5 && (
-          <div className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                type="text"
-                placeholder="Search webhooks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+        {/* Tabs and History button */}
+        {config.backend_url && (
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveTab('auto')}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                  activeTab === 'auto'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4" />
+                  Auto-Detected
+                  {updates.length > 0 && (
+                    <span className="bg-blue-600 dark:bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+                      {updates.length}
+                    </span>
+                  )}
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('manual')}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                  activeTab === 'manual'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750'
+                }`}
+              >
+                Manual Webhooks
+              </button>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHistory(true)}
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              History
+            </Button>
           </div>
         )}
 
-        {/* Webhook List */}
-        <div className="space-y-3">
-          {filteredWebhooks.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
-              <p className="text-gray-500 dark:text-gray-400">
-                {searchQuery ? 'No webhooks match your search' : 'No webhooks configured'}
-              </p>
-            </div>
-          ) : (
-            filteredWebhooks.map((webhook) => (
-              <div
-                key={webhook.url}
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between gap-4"
-              >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="flex-shrink-0">
-                    {webhook.type === 'stack' ? (
-                      <Layers className="w-5 h-5 text-blue-500" />
-                    ) : (
-                      <Container className="w-5 h-5 text-green-500" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-medium text-gray-900 dark:text-white truncate">
-                      {webhook.name}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                      {webhook.type}
-                    </p>
-                  </div>
+        {/* Auto-detected updates tab */}
+        {config.backend_url && activeTab === 'auto' && (
+          <UpdatesList
+            updates={updates}
+            loading={loadingUpdates}
+            onTriggerUpdate={handleTriggerUpdate}
+            onTriggerBatch={handleTriggerBatch}
+            onDismiss={handleDismissUpdate}
+          />
+        )}
+
+        {/* Manual webhooks tab */}
+        {(!config.backend_url || activeTab === 'manual') && (
+          <>
+            {/* Search */}
+            {config.webhooks.length > 5 && (
+              <div className="mb-6">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Input
+                    type="text"
+                    placeholder="Search webhooks..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
-                <Button
-                  onClick={() => triggerWebhook(webhook)}
-                  disabled={loadingWebhooks.has(webhook.url)}
-                  size="sm"
-                  className="flex-shrink-0"
-                >
-                  {loadingWebhooks.has(webhook.url) ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Update
-                    </>
-                  )}
-                </Button>
               </div>
-            ))
-          )}
-        </div>
+            )}
+
+            {/* Webhook List */}
+            <div className="space-y-3">
+              {filteredWebhooks.length === 0 ? (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {searchQuery ? 'No webhooks match your search' : 'No webhooks configured'}
+                  </p>
+                </div>
+              ) : (
+                filteredWebhooks.map((webhook) => (
+                  <div
+                    key={webhook.url}
+                    className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between gap-4"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex-shrink-0">
+                        {webhook.type === 'stack' ? (
+                          <Layers className="w-5 h-5 text-blue-500" />
+                        ) : (
+                          <Container className="w-5 h-5 text-green-500" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-medium text-gray-900 dark:text-white truncate">
+                          {webhook.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                          {webhook.type}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => triggerWebhook(webhook)}
+                      disabled={loadingWebhooks.has(webhook.url)}
+                      size="sm"
+                      className="flex-shrink-0"
+                    >
+                      {loadingWebhooks.has(webhook.url) ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Update
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
       </main>
 
       <Footer version="v1.0.0" />
@@ -359,6 +499,14 @@ function App() {
           </div>
         ))}
       </div>
+
+      {/* Update History Modal */}
+      {showHistory && config.backend_url && (
+        <UpdateHistory
+          apiClient={apiClient}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
     </div>
   )
 }

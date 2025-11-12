@@ -1,0 +1,28 @@
+{
+  "pin": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+  "backend_url": "http://portainer-updater-backend:3000",
+  "webhooks": [
+    {
+      "name": "Nginx Web Server",
+      "type": "container",
+      "stack": "web-stack",
+      "image": "nginx:latest",
+      "container_name": "nginx",
+      "webhook_url": "https://portainer.example.com/api/webhooks/00000000-0000-0000-0000-000000000001"
+    },
+    {
+      "name": "PostgreSQL Database",
+      "type": "container",
+      "stack": "database-stack",
+      "image": "postgres:15",
+      "container_name": "postgres",
+      "webhook_url": "https://portainer.example.com/api/webhooks/00000000-0000-0000-0000-000000000002"
+    },
+    {
+      "name": "Application Stack",
+      "type": "stack",
+      "stack": "app-stack",
+      "webhook_url": "https://portainer.example.com/api/webhooks/00000000-0000-0000-0000-000000000003"
+    }
+  ]
+}
