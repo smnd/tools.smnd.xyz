@@ -64,6 +64,9 @@ export function initializeDatabase() {
   console.log('Database initialized successfully');
 }
 
+// Initialize database on module load
+initializeDatabase();
+
 // Prepared statements for common operations
 export const statements: {
   getPendingUpdates: BetterSqlite3.Statement;
