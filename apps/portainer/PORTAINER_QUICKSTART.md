@@ -1,6 +1,17 @@
-# Portainer Deployment - Quick Start
+# Portainer Deployment - Quick Start (Legacy Method)
 
-Deploy Portainer Updater with Diun integration on your NAS in ~10 minutes.
+> ⚠️ **OUTDATED:** This guide describes building images on your NAS.
+>
+> **RECOMMENDED:** Use the [Docker Hub Workflow](../../DOCKER_HUB_WORKFLOW.md) instead!
+> - Build locally on your fast machine
+> - No git needed on NAS
+> - Easy updates with one command
+>
+> This guide is kept for reference only.
+
+---
+
+Deploy Portainer Updater with Diun integration on your NAS in ~10 minutes (if you have git on NAS).
 
 ## TL;DR
 

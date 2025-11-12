@@ -1,13 +1,18 @@
 version: '3.8'
 
+# DEPRECATED: This file is kept for local development only
+# For production deployment, use portainer-stack.yml via Portainer's Git deployment
+# See DOCKER_HUB_WORKFLOW.md for the recommended deployment method
+
 services:
   # Backend service - handles Diun webhooks and stores update info
   portainer-updater-backend:
     container_name: portainer-updater-backend
-    image: portainer-updater-backend:latest
-    build:
-      context: ../../
-      dockerfile: apps/portainer-backend/Dockerfile
+    image: holmes221b/portainer-updater-backend:latest
+    # Uncomment to build locally instead of pulling from Docker Hub:
+    # build:
+    #   context: ../../
+    #   dockerfile: apps/portainer-backend/Dockerfile
     volumes:
       # SQLite database storage - update path as needed
       - /volume2/docker/portainer-updater/data:/app/data
@@ -31,10 +36,11 @@ services:
   # Frontend service - React app served by nginx
   portainer-updater:
     container_name: portainer-updater
-    image: portainer-updater:latest
-    build:
-      context: ../../
-      dockerfile: apps/portainer/Dockerfile
+    image: holmes221b/portainer-updater:latest
+    # Uncomment to build locally instead of pulling from Docker Hub:
+    # build:
+    #   context: ../../
+    #   dockerfile: apps/portainer/Dockerfile
     ports:
       - "7890:80"  # Change 7890 to your preferred port
     volumes:

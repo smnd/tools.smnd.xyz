@@ -1,6 +1,16 @@
-# Deploy Portainer Updater on NAS via Portainer
+# Deploy Portainer Updater on NAS via Portainer (Legacy Method)
 
-This guide shows how to deploy the Portainer Updater with Diun integration directly through Portainer's web interface.
+> ⚠️ **OUTDATED:** This guide describes building images on your NAS and deploying manually.
+>
+> **RECOMMENDED:** Use these guides instead:
+> - [Docker Hub Workflow](../../DOCKER_HUB_WORKFLOW.md) - Build locally, deploy remotely
+> - [Git Deployment](PORTAINER_GIT_DEPLOY.md) - Deploy from Git with GitOps
+>
+> This guide is kept for reference only.
+
+---
+
+This guide shows how to deploy the Portainer Updater with Diun integration directly through Portainer's web interface (legacy method requiring git and build tools on NAS).
 
 ## Prerequisites
 
