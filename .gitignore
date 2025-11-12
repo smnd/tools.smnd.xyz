@@ -18,3 +18,4 @@ dist/
 
 # App-specific sensitive files
 apps/portainer/public/config.json
+apps/portainer/config.json
