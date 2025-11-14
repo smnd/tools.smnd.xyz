@@ -5,6 +5,7 @@ import { loadConfig } from './utils/config.js';
 import diunRouter from './routes/diun.js';
 import updatesRouter from './routes/updates.js';
 import historyRouter from './routes/history.js';
+import triggerRouter from './routes/trigger.js';
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -28,6 +29,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/diun', diunRouter);
 app.use('/api/updates', updatesRouter);
 app.use('/api/history', historyRouter);
+app.use('/api/trigger-webhook', triggerRouter);
 
 // 404 handler
 app.use((_req, res) => {
@@ -56,7 +58,8 @@ async function start() {
       console.log(`\n🚀 Portainer Updater Backend running on port ${PORT}`);
       console.log(`   Health check: http://localhost:${PORT}/health`);
       console.log(`   Diun webhook: http://localhost:${PORT}/api/diun/webhook`);
-      console.log(`   Updates API: http://localhost:${PORT}/api/updates\n`);
+      console.log(`   Updates API: http://localhost:${PORT}/api/updates`);
+      console.log(`   Trigger webhook: http://localhost:${PORT}/api/trigger-webhook\n`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

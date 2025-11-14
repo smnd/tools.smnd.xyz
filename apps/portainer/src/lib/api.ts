@@ -55,6 +55,14 @@ export class ApiClient {
     })
   }
 
+  // Trigger any webhook URL directly (for manual webhooks)
+  async triggerWebhook(webhookUrl: string): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>('/api/trigger-webhook', {
+      method: 'POST',
+      body: JSON.stringify({ webhook_url: webhookUrl }),
+    })
+  }
+
   // Dismiss an update
   async dismissUpdate(updateId: number): Promise<void> {
     await this.request<void>(`/api/updates/${updateId}`, {

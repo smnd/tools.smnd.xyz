@@ -1,10 +1,11 @@
 import { useEffect, useState, useMemo } from 'react'
 import { ThemeToggle, Footer, getStoredTheme, setStoredTheme, applyTheme, watchSystemTheme, type Theme, Button, Input } from '@tools/ui'
-import { Search, RefreshCw, Lock, CheckCircle2, XCircle, Container, Layers, Bell, Clock } from 'lucide-react'
+import { Search, RefreshCw, Lock, CheckCircle2, XCircle, Container, Layers, Bell, Clock, ChevronDown, ChevronRight } from 'lucide-react'
 import { ApiClient } from './lib/api'
 import { UpdatesList } from './components/UpdatesList'
 import { UpdateHistory } from './components/UpdateHistory'
 import type { Update } from './lib/types'
+import { deduplicateUpdates } from './lib/utils'
 import './App.css'
 
 interface Webhook {
@@ -116,6 +117,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [pinInput, setPinInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [expandedManualStacks, setExpandedManualStacks] = useState<Set<string>>(new Set())
   const [loadingWebhooks, setLoadingWebhooks] = useState<Set<string>>(new Set())
   const [toasts, setToasts] = useState<Toast[]>([])
   const [configError, setConfigError] = useState<string | null>(null)
@@ -126,6 +128,9 @@ function App() {
   const [activeTab, setActiveTab] = useState<'auto' | 'manual'>('auto')
   const [showHistory, setShowHistory] = useState(false)
   const apiClient = useMemo(() => new ApiClient(config?.backend_url ?? 'http://localhost:3000'), [config?.backend_url])
+
+  // Deduplicated updates count for badge display
+  const uniqueUpdatesCount = useMemo(() => deduplicateUpdates(updates).length, [updates])
 
   // Initialize and manage theme
   useEffect(() => {
@@ -174,7 +179,8 @@ function App() {
       setUpdates(data)
 
       // Auto-switch to auto tab if there are updates
-      if (data.length > 0 && activeTab === 'manual') {
+      const uniqueCount = deduplicateUpdates(data).length
+      if (uniqueCount > 0 && activeTab === 'manual') {
         setActiveTab('auto')
       }
     } catch (error) {
@@ -254,15 +260,8 @@ function App() {
     setLoadingWebhooks(prev => new Set(prev).add(webhook.webhook_url))
 
     try {
-      const response = await fetch(webhook.webhook_url, {
-        method: 'POST',
-      })
-
-      if (response.ok) {
-        addToast(`✓ ${webhook.name} update triggered`, 'success')
-      } else {
-        throw new Error(`HTTP ${response.status}`)
-      }
+      await apiClient.triggerWebhook(webhook.webhook_url)
+      addToast(`✓ ${webhook.name} update triggered`, 'success')
     } catch (error) {
       addToast(`✗ Failed to trigger ${webhook.name}: ${error}`, 'error')
     } finally {
@@ -315,6 +314,44 @@ function App() {
   const filteredWebhooks = config?.webhooks.filter(webhook =>
     webhook.name.toLowerCase().includes(searchQuery.toLowerCase())
   ) || []
+
+  // Group manual webhooks by stack
+  interface GroupedWebhooks {
+    stack: string | null
+    webhooks: Webhook[]
+  }
+
+  const groupedWebhooks: GroupedWebhooks[] = filteredWebhooks.reduce((acc, webhook) => {
+    const stackName = webhook.stack || 'Individual Containers'
+    let group = acc.find(g => g.stack === stackName)
+
+    if (!group) {
+      group = { stack: stackName, webhooks: [] }
+      acc.push(group)
+    }
+
+    group.webhooks.push(webhook)
+    return acc
+  }, [] as GroupedWebhooks[])
+
+  // Sort: stacks first, then individual containers
+  groupedWebhooks.sort((a, b) => {
+    if (a.stack === 'Individual Containers') return 1
+    if (b.stack === 'Individual Containers') return -1
+    return (a.stack || '').localeCompare(b.stack || '')
+  })
+
+  const toggleManualStack = (stackName: string) => {
+    setExpandedManualStacks(prev => {
+      const next = new Set(prev)
+      if (next.has(stackName)) {
+        next.delete(stackName)
+      } else {
+        next.add(stackName)
+      }
+      return next
+    })
+  }
 
   // Config error screen
   if (configError) {
@@ -466,9 +503,9 @@ function App() {
                 <div className="flex items-center gap-2">
                   <Bell className="w-4 h-4" />
                   Auto-Detected
-                  {updates.length > 0 && (
+                  {uniqueUpdatesCount > 0 && (
                     <span className="bg-blue-600 dark:bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-                      {updates.length}
+                      {uniqueUpdatesCount}
                     </span>
                   )}
                 </div>
@@ -534,50 +571,91 @@ function App() {
                   </p>
                 </div>
               ) : (
-                filteredWebhooks.map((webhook) => (
-                  <div
-                    key={webhook.webhook_url}
-                    className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between gap-4"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="flex-shrink-0">
-                        {webhook.type === 'stack' ? (
-                          <Layers className="w-5 h-5 text-blue-500" />
-                        ) : (
-                          <Container className="w-5 h-5 text-green-500" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-medium text-gray-900 dark:text-white truncate">
-                          {webhook.name}
-                        </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                          {webhook.type}
-                        </p>
+                groupedWebhooks.map((group) => {
+                  const isExpanded = expandedManualStacks.has(group.stack || '')
+                  const isStack = group.stack !== 'Individual Containers'
+
+                  return (
+                    <div key={group.stack} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      {/* Stack header */}
+                      {isStack && (
+                        <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+                          <div className="p-4 flex items-center justify-between gap-4">
+                            <button
+                              onClick={() => toggleManualStack(group.stack || '')}
+                              className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                              ) : (
+                                <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                              )}
+                              <Layers className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-base font-medium text-gray-900 dark:text-white truncate">
+                                  {group.stack}
+                                </h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {group.webhooks.length} webhook{group.webhooks.length !== 1 ? 's' : ''}
+                                </p>
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Webhook list */}
+                      <div className={isStack && !isExpanded ? 'hidden' : ''}>
+                        {group.webhooks.map((webhook, index) => (
+                          <div
+                            key={webhook.webhook_url}
+                            className={`p-4 flex items-center justify-between gap-4 ${
+                              index > 0 || isStack ? 'border-t border-gray-200 dark:border-gray-700' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <div className="flex-shrink-0">
+                                {webhook.type === 'stack' ? (
+                                  <Layers className="w-5 h-5 text-blue-500" />
+                                ) : (
+                                  <Container className="w-5 h-5 text-green-500" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-base font-medium text-gray-900 dark:text-white truncate">
+                                  {webhook.name}
+                                </h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                                  {webhook.type}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              onClick={() => triggerWebhook(webhook)}
+                              disabled={!isWebhookConfigured(webhook) || loadingWebhooks.has(webhook.webhook_url)}
+                              size="sm"
+                              className="flex-shrink-0"
+                            >
+                              {!isWebhookConfigured(webhook) ? (
+                                'No webhook defined'
+                              ) : loadingWebhooks.has(webhook.webhook_url) ? (
+                                <>
+                                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                  Updating...
+                                </>
+                              ) : (
+                                <>
+                                  <RefreshCw className="w-4 h-4 mr-2" />
+                                  Update
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <Button
-                      onClick={() => triggerWebhook(webhook)}
-                      disabled={!isWebhookConfigured(webhook) || loadingWebhooks.has(webhook.webhook_url)}
-                      size="sm"
-                      className="flex-shrink-0"
-                    >
-                      {!isWebhookConfigured(webhook) ? (
-                        'No webhook defined'
-                      ) : loadingWebhooks.has(webhook.webhook_url) ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Updating...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          Update
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </>

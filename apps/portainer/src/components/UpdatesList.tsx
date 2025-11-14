@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '@tools/ui'
 import { RefreshCw, Container, Layers, ChevronDown, ChevronRight, CheckSquare, Square } from 'lucide-react'
 import type { Update, GroupedUpdates } from '../lib/types'
+import { deduplicateUpdates } from '../lib/utils'
 
 interface UpdatesListProps {
   updates: Update[]
@@ -17,8 +18,11 @@ export function UpdatesList({ updates, loading, onTriggerUpdate, onTriggerBatch,
   const [triggeringIds, setTriggeringIds] = useState<Set<number>>(new Set())
   const [batchTriggering, setBatchTriggering] = useState(false)
 
+  // Deduplicate updates - keep only the latest update per container
+  const uniqueUpdates = deduplicateUpdates(updates)
+
   // Group updates by stack
-  const groupedUpdates: GroupedUpdates[] = updates.reduce((acc, update) => {
+  const groupedUpdates: GroupedUpdates[] = uniqueUpdates.reduce((acc, update) => {
     const stackName = update.stack || 'Individual Containers'
     let group = acc.find(g => g.stack === stackName)
 
@@ -126,7 +130,7 @@ export function UpdatesList({ updates, loading, onTriggerUpdate, onTriggerBatch,
     )
   }
 
-  if (updates.length === 0) {
+  if (uniqueUpdates.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
         <p className="text-gray-600 dark:text-gray-400">No pending updates detected by Diun</p>
@@ -137,42 +141,52 @@ export function UpdatesList({ updates, loading, onTriggerUpdate, onTriggerBatch,
   return (
     <div className="space-y-4">
       {/* Batch actions */}
-      {selectedIds.size > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-              {selectedIds.size} update{selectedIds.size !== 1 ? 's' : ''} selected
-            </span>
+      {selectedIds.size > 0 && (() => {
+        const selectedUpdates = uniqueUpdates.filter(u => selectedIds.has(u.id))
+        const hasNoWebhook = selectedUpdates.some(u => !u.webhookUrl)
+        return (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                {selectedIds.size} update{selectedIds.size !== 1 ? 's' : ''} selected
+                {hasNoWebhook && (
+                  <span className="text-xs ml-2 text-orange-600 dark:text-orange-400">
+                    (some have no webhook)
+                  </span>
+                )}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                Clear Selection
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleTriggerBatch}
+                disabled={batchTriggering || hasNoWebhook}
+                title={hasNoWebhook ? 'Some selected updates have no webhook defined' : ''}
+              >
+                {batchTriggering ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Update Selected
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedIds(new Set())}
-            >
-              Clear Selection
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleTriggerBatch}
-              disabled={batchTriggering}
-            >
-              {batchTriggering ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Update Selected
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Grouped updates */}
       {groupedUpdates.map((group) => {
@@ -223,7 +237,8 @@ export function UpdatesList({ updates, loading, onTriggerUpdate, onTriggerBatch,
                     <Button
                       size="sm"
                       onClick={() => handleTriggerStack(group.updates)}
-                      disabled={batchTriggering}
+                      disabled={batchTriggering || group.updates.some(u => !u.webhookUrl)}
+                      title={group.updates.some(u => !u.webhookUrl) ? 'Some containers have no webhook defined' : ''}
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Update Stack
@@ -275,9 +290,11 @@ export function UpdatesList({ updates, loading, onTriggerUpdate, onTriggerBatch,
                     <Button
                       size="sm"
                       onClick={() => handleTriggerSingle(update.id)}
-                      disabled={triggeringIds.has(update.id)}
+                      disabled={!update.webhookUrl || triggeringIds.has(update.id)}
                     >
-                      {triggeringIds.has(update.id) ? (
+                      {!update.webhookUrl ? (
+                        'No webhook defined'
+                      ) : triggeringIds.has(update.id) ? (
                         <>
                           <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                           Updating...
