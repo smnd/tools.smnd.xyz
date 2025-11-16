@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 This is a monorepo containing multiple small web-based utility tools, each deployed independently but sharing common UI components. Currently hosts:
+
 - **Payment QR Generator** (`/apps/qr`) - SGQR/PayNow/DuitNow/UPI QR code generator
 - **QR Code Generator** (`/apps/qr-code`) - Simple text/URL to QR converter
 - **MX Record Checker** (`/apps/mx-checker`) - Email domain verification tool
@@ -26,6 +27,7 @@ All tools are accessible at tools.smnd.xyz with sub-path routing.
 ## Common Commands
 
 ### Development
+
 ```bash
 pnpm dev:qr           # Run Payment QR Generator (localhost:5173)
 pnpm dev:qr-code      # Run QR Code Generator
@@ -34,6 +36,7 @@ pnpm dev:portainer    # Run Portainer Updater
 ```
 
 ### Build
+
 ```bash
 pnpm build:qr         # Build Payment QR Generator
 pnpm build:qr-code    # Build QR Code Generator
@@ -43,12 +46,14 @@ pnpm build:all        # Build all apps in /apps/*
 ```
 
 ### Validation & Preview
+
 ```bash
 node scripts/validate-apps.js  # Check app consistency (run before commits)
 pnpm preview:qr               # Preview built QR app
 ```
 
 ### Per-App Commands (from app directory)
+
 ```bash
 cd apps/qr && pnpm dev      # Start dev server
 cd apps/qr && pnpm build    # TypeScript check + Vite build
@@ -58,7 +63,8 @@ cd apps/qr && pnpm lint     # Run ESLint
 ## Architecture
 
 ### Monorepo Structure
-```
+
+``` md
 apps/                   # Individual applications (each deployed separately)
   ├── qr/              # Most complex app with Zustand, form validation
   ├── qr-code/         # Simpler structure
@@ -91,6 +97,7 @@ The `@tools/ui` package is the **single source of truth** for UI components acro
 ### Deployment Model
 
 Each app is deployed separately to Vercel but routed through a single domain:
+
 - **Vercel**: Individual projects per app with monorepo-aware builds
 - **Cloudflare Workers**: Sub-path routing (tools.smnd.xyz/qr → qr app)
 - **Environment Variable**: `VITE_BASE_PATH=/app-name` for sub-path builds
@@ -99,7 +106,8 @@ Each app is deployed separately to Vercel but routed through a single domain:
 This allows independent scaling, isolated failures, and smaller bundle sizes while maintaining a unified user experience.
 
 ### Typical App Structure
-```
+
+``` md
 apps/qr/
   ├── src/
   │   ├── components/     # App-specific components (organized by feature)
@@ -164,11 +172,13 @@ apps/qr/
    - `App.tsx`: Update title and content
    - `vercel.json`: Ensure build commands point to correct app
 3. **Add Root Scripts** in root `package.json`:
-   ```json
-   "dev:your-app": "pnpm --filter your-app dev",
-   "build:your-app": "pnpm --filter your-app build",
-   "preview:your-app": "pnpm --filter your-app preview"
-   ```
+
+  ```json
+    "dev:your-app": "pnpm --filter your-app dev",
+    "build:your-app": "pnpm --filter your-app build",
+    "preview:your-app": "pnpm --filter your-app preview"
+  ```
+
 4. **Install Dependencies**: `pnpm install` from root
 5. **Validate**: `node scripts/validate-apps.js` to check consistency
 6. **Test Locally**: `pnpm dev:your-app`
@@ -176,6 +186,7 @@ apps/qr/
 ## Validation Script
 
 Run `node scripts/validate-apps.js` before committing to check:
+
 - Tailwind config includes UI package in content paths
 - Required dependencies are present (@tools/ui, tailwindcss-animate)
 - Global CSS includes standard dark mode patterns
@@ -184,6 +195,7 @@ Run `node scripts/validate-apps.js` before committing to check:
 ## Build & Deployment
 
 ### Local Build
+
 ```bash
 pnpm build:app-name        # Build specific app
 VITE_BASE_PATH=/path pnpm build:app-name  # Build with sub-path
@@ -191,6 +203,7 @@ pnpm build:all             # Build all apps
 ```
 
 ### Vercel Deployment (per app)
+
 1. Create new Vercel project
 2. Set **Root Directory**: `apps/app-name`
 3. Leave build commands empty (uses `vercel.json`)
@@ -198,12 +211,15 @@ pnpm build:all             # Build all apps
 5. Deploy automatically on push to main
 
 ### Build Process
+
 Each app's `vercel.json` contains:
+
 ```json
 {
   "buildCommand": "cd ../.. && pnpm install && pnpm build:app-name"
 }
 ```
+
 This ensures monorepo dependencies are properly installed during Vercel builds.
 
 ## Important Files
