@@ -32,10 +32,19 @@ export function initializeDatabase() {
       detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       status TEXT DEFAULT 'pending',
       webhook_url TEXT,
+      stack_webhook_url TEXT,
       metadata TEXT,
       UNIQUE(image, container_name, new_digest)
     )
   `);
+
+  // Migration: Add stack_webhook_url column if it doesn't exist
+  try {
+    db.exec(`ALTER TABLE updates ADD COLUMN stack_webhook_url TEXT`);
+    console.log('Added stack_webhook_url column to updates table');
+  } catch (error) {
+    // Column already exists, ignore error
+  }
 
   // Update history - audit log of all triggered updates
   db.exec(`
@@ -95,8 +104,8 @@ export const statements: {
   insertUpdate: db.prepare(`
     INSERT INTO updates (
       image, container_name, container_id, stack,
-      current_digest, new_digest, webhook_url, metadata
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      current_digest, new_digest, webhook_url, stack_webhook_url, metadata
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
 
   // Update status
@@ -149,6 +158,7 @@ export interface Update {
   detected_at: string;
   status: 'pending' | 'updating' | 'completed' | 'failed';
   webhook_url: string | null;
+  stack_webhook_url: string | null;
   metadata: string | null;
 }
 

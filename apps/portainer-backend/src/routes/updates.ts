@@ -65,6 +65,7 @@ function mapUpdateToResponse(update: Update): UpdateResponse {
     detectedAt: update.detected_at,
     status: update.status,
     webhookUrl: update.webhook_url,
+    stackWebhookUrl: update.stack_webhook_url,
     metadata: update.metadata ? JSON.parse(update.metadata) : null,
   };
 }
@@ -258,6 +259,73 @@ router.delete('/:id', authenticatePin, (req: Request, res: Response) => {
     res.status(500).json({
       error: 'Failed to delete update',
       message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// POST /api/updates/stack/:stackName/trigger - Trigger stack-level webhook
+router.post('/stack/:stackName/trigger', authenticatePin, async (req: Request, res: Response) => {
+  try {
+    const stackName = req.params.stackName;
+
+    if (!stackName) {
+      res.status(400).json({ error: 'Stack name is required' });
+      return;
+    }
+
+    // Find any update in this stack to get the stack webhook URL
+    const updates = statements.getPendingUpdates.all() as Update[];
+    const stackUpdate = updates.find(u => u.stack === stackName);
+
+    if (!stackUpdate) {
+      res.status(404).json({ error: 'No pending updates found for this stack' });
+      return;
+    }
+
+    if (!stackUpdate.stack_webhook_url) {
+      res.status(400).json({ error: 'No stack webhook URL configured for this stack' });
+      return;
+    }
+
+    console.log(`Triggering stack webhook for: ${stackName}`);
+
+    // Trigger the stack webhook
+    const result = await triggerWebhook(stackUpdate.stack_webhook_url);
+
+    if (result.success) {
+      // Mark all updates in this stack as completed
+      for (const update of updates.filter(u => u.stack === stackName)) {
+        statements.updateStatus.run('completed', update.id);
+
+        // Create history record
+        statements.insertHistory.run(
+          update.id,
+          update.image,
+          update.container_name,
+          update.stack,
+          'completed',
+          stackUpdate.stack_webhook_url
+        );
+      }
+
+      const response: TriggerResponse = {
+        success: true,
+        message: `Stack ${stackName} update triggered successfully`,
+      };
+      res.json(response);
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to trigger stack webhook',
+        error: result.error,
+      });
+    }
+  } catch (error) {
+    console.error('Error triggering stack update:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });

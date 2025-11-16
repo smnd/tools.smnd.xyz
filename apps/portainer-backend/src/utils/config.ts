@@ -41,7 +41,7 @@ export function loadConfig(): Config {
   }
 }
 
-export function findWebhookForImage(image: string, containerName?: string): WebhookConfig | null {
+export function findWebhookForImage(image: string, containerName?: string, stack?: string): WebhookConfig | null {
   const config = loadConfig();
 
   // Try exact match with image and container name
@@ -62,7 +62,42 @@ export function findWebhookForImage(image: string, containerName?: string): Webh
     if (nameMatch) return nameMatch;
   }
 
+  // Fallback: Try to find stack-level webhook if stack is provided
+  if (stack) {
+    const stackMatch = config.webhooks.find(
+      w => w.type === 'stack' && w.stack === stack
+    );
+    if (stackMatch) {
+      console.log(`Using stack-level webhook for ${stack}: ${stackMatch.name}`);
+      return stackMatch;
+    }
+  }
+
+  // Additional fallback: If no direct match found, try to infer stack from any webhook with matching image/container
+  // Then look for a stack-level webhook for that stack
+  const relatedWebhook = config.webhooks.find(
+    w => (w.image === image || w.container_name === containerName) && w.stack
+  );
+
+  if (relatedWebhook && relatedWebhook.stack) {
+    const inferredStackWebhook = config.webhooks.find(
+      w => w.type === 'stack' && w.stack === relatedWebhook.stack
+    );
+    if (inferredStackWebhook) {
+      console.log(`Inferred stack ${relatedWebhook.stack} from related webhook, using stack-level webhook: ${inferredStackWebhook.name}`);
+      return inferredStackWebhook;
+    }
+  }
+
   return null;
+}
+
+export function findStackWebhook(stackName: string): WebhookConfig | null {
+  const config = loadConfig();
+  const stackWebhook = config.webhooks.find(
+    w => w.type === 'stack' && w.stack === stackName
+  );
+  return stackWebhook || null;
 }
 
 export function getWebhookByName(name: string): WebhookConfig | null {

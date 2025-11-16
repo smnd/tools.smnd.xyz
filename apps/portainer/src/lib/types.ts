@@ -10,6 +10,7 @@ export interface Update {
   detectedAt: string
   status: 'pending' | 'updating' | 'completed' | 'failed'
   webhookUrl: string | null
+  stackWebhookUrl: string | null
   metadata: Record<string, unknown> | null
 }
 

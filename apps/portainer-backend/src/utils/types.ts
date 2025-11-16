@@ -51,6 +51,7 @@ export interface UpdateResponse {
   detectedAt: string;
   status: string;
   webhookUrl: string | null;
+  stackWebhookUrl: string | null;
   metadata: Record<string, unknown> | null;
 }
 

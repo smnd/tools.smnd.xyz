@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import type { Router as ExpressRouter } from 'express';
 import { DiunWebhookSchema } from '../utils/types.js';
 import { statements } from '../models/database.js';
-import { findWebhookForImage } from '../utils/config.js';
+import { findWebhookForImage, findStackWebhook } from '../utils/config.js';
 
 const router: ExpressRouter = Router();
 
@@ -24,11 +24,18 @@ router.post('/webhook', async (req: Request, res: Response) => {
       digest: payload.digest,
     });
 
-    // Find matching webhook configuration
+    // Find matching webhook configuration (container-level)
     const containerName = payload.metadata?.ctn_names;
-    const webhookConfig = findWebhookForImage(payload.image, containerName);
+    const containerWebhook = findWebhookForImage(payload.image, containerName);
 
-    if (!webhookConfig) {
+    // Determine stack name from container webhook or infer it
+    const stackName = containerWebhook?.stack;
+
+    // Find stack-level webhook if stack exists
+    const stackWebhook = stackName ? findStackWebhook(stackName) : null;
+
+    // If neither container nor stack webhook found, skip
+    if (!containerWebhook && !stackWebhook) {
       console.warn(`No webhook configuration found for image: ${payload.image}`);
       // Still return 200 to avoid Diun retry spam
       res.json({
@@ -39,23 +46,26 @@ router.post('/webhook', async (req: Request, res: Response) => {
       return;
     }
 
-    // Insert or update pending update
+    // Insert or update pending update with BOTH webhooks
     try {
       statements.insertUpdate.run(
         payload.image,
         containerName || null,
         payload.metadata?.ctn_id || null,
-        webhookConfig.stack || null,
+        stackName || null,
         null, // current_digest (we don't track this)
         payload.digest,
-        webhookConfig.webhook_url,
+        containerWebhook?.webhook_url || null,
+        stackWebhook?.webhook_url || null,
         JSON.stringify(payload.metadata || {})
       );
 
       console.log('Update record created:', {
         image: payload.image,
         container: containerName,
-        stack: webhookConfig.stack,
+        stack: stackName,
+        containerWebhook: containerWebhook?.name || null,
+        stackWebhook: stackWebhook?.name || null,
       });
 
       res.json({

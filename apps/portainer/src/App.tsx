@@ -306,6 +306,17 @@ function App() {
     }
   }
 
+  const handleTriggerStack = async (stackName: string) => {
+    try {
+      await apiClient.triggerStackUpdate(stackName)
+      addToast(`✓ Stack ${stackName} update triggered`, 'success')
+      await loadUpdates() // Refresh list
+    } catch (error) {
+      addToast(`✗ Failed to trigger stack update: ${error}`, 'error')
+      throw error
+    }
+  }
+
   const handleDismissUpdate = async (updateId: number) => {
     try {
       await apiClient.dismissUpdate(updateId)
@@ -544,6 +555,7 @@ function App() {
             loading={loadingUpdates}
             onTriggerUpdate={handleTriggerUpdate}
             onTriggerBatch={handleTriggerBatch}
+            onTriggerStack={handleTriggerStack}
             onDismiss={handleDismissUpdate}
           />
         )}

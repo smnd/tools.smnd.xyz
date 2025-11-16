@@ -9,10 +9,11 @@ interface UpdatesListProps {
   loading: boolean
   onTriggerUpdate: (updateId: number) => Promise<void>
   onTriggerBatch: (updateIds: number[]) => Promise<void>
+  onTriggerStack: (stackName: string) => Promise<void>
   onDismiss: (updateId: number) => Promise<void>
 }
 
-export function UpdatesList({ updates, loading, onTriggerUpdate, onTriggerBatch, onDismiss }: UpdatesListProps) {
+export function UpdatesList({ updates, loading, onTriggerUpdate, onTriggerBatch, onTriggerStack, onDismiss }: UpdatesListProps) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [expandedStacks, setExpandedStacks] = useState<Set<string>>(new Set())
   const [triggeringIds, setTriggeringIds] = useState<Set<number>>(new Set())
@@ -111,11 +112,10 @@ export function UpdatesList({ updates, loading, onTriggerUpdate, onTriggerBatch,
     }
   }
 
-  const handleTriggerStack = async (stackUpdates: Update[]) => {
-    const ids = stackUpdates.map(u => u.id)
+  const handleTriggerStack = async (stackName: string) => {
     setBatchTriggering(true)
     try {
-      await onTriggerBatch(ids)
+      await onTriggerStack(stackName)
     } finally {
       setBatchTriggering(false)
     }
@@ -236,12 +236,18 @@ export function UpdatesList({ updates, loading, onTriggerUpdate, onTriggerBatch,
                     </button>
                     <Button
                       size="sm"
-                      onClick={() => handleTriggerStack(group.updates)}
-                      disabled={batchTriggering || group.updates.some(u => !u.webhookUrl)}
-                      title={group.updates.some(u => !u.webhookUrl) ? 'Some containers have no webhook defined' : ''}
+                      onClick={() => handleTriggerStack(group.stack || '')}
+                      disabled={batchTriggering || !group.updates[0]?.stackWebhookUrl}
+                      title={!group.updates[0]?.stackWebhookUrl ? 'No stack webhook defined' : ''}
                     >
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Update Stack
+                      {!group.updates[0]?.stackWebhookUrl ? (
+                        'No stack webhook'
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Update Stack
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>

@@ -63,6 +63,13 @@ export class ApiClient {
     })
   }
 
+  // Trigger stack-level webhook
+  async triggerStackUpdate(stackName: string): Promise<TriggerResponse> {
+    return this.request<TriggerResponse>(`/api/updates/stack/${encodeURIComponent(stackName)}/trigger`, {
+      method: 'POST',
+    })
+  }
+
   // Dismiss an update
   async dismissUpdate(updateId: number): Promise<void> {
     await this.request<void>(`/api/updates/${updateId}`, {
