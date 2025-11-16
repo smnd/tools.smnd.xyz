@@ -4,7 +4,6 @@ version: '3.8'
 # Deploy this via Portainer UI: Stacks → Add stack → Repository
 #
 # Docker Hub images - built locally and pushed via ./build-and-push.sh
-# See DOCKER_HUB_WORKFLOW.md for setup instructions
 
 services:
   # Backend - Handles Diun webhooks and stores updates

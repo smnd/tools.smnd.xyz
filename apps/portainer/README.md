@@ -39,6 +39,7 @@ nano /volume1/docker/portainer-updater/config.json
 ```
 
 Paste:
+
 ```json
 {
   "pin": "your-sha256-hash",
@@ -57,6 +58,7 @@ Paste:
 ```
 
 Generate PIN hash:
+
 ```bash
 echo -n "your-pin" | shasum -a 256
 # Or use: node apps/portainer/generate-pin.js
@@ -77,6 +79,7 @@ echo -n "your-pin" | shasum -a 256
 ### 4. Configure Diun (Optional)
 
 Add to your Diun stack/container:
+
 ```yaml
 environment:
   - DIUN_NOTIF_WEBHOOK_ENDPOINT=http://portainer-updater-backend:3000/api/diun/webhook
@@ -114,7 +117,7 @@ git push
 
 ### Overview
 
-```
+```md
 ┌──────────────┐
 │  Local Dev   │  1. Make changes
 │  (Your Mac)  │  2. ./build-and-push.sh
@@ -146,6 +149,7 @@ git push
 ### Components
 
 **Backend Service:**
+
 - Node.js + Express + TypeScript
 - Receives Diun webhooks
 - Stores updates in SQLite
@@ -153,6 +157,7 @@ git push
 - PIN authentication
 
 **Frontend App:**
+
 - React 19 + TypeScript + Vite
 - Auto-detected updates tab (from Diun)
 - Manual webhooks tab (original)
@@ -160,33 +165,11 @@ git push
 - Batch & stack operations
 
 **Deployment:**
+
 - Docker Hub for image hosting
 - Portainer for orchestration
 - GitOps for auto-updates
 - No git needed on NAS!
-
-## Tech Stack
-
-**Backend:**
-- Node.js 20
-- Express 4
-- TypeScript 5
-- SQLite (better-sqlite3)
-- Zod validation
-
-**Frontend:**
-- React 19
-- TypeScript 5
-- Vite 7
-- Tailwind CSS 3
-- Radix UI primitives
-- Shared @tools/ui components
-
-**Deployment:**
-- Docker + Docker Compose
-- Docker Hub
-- Portainer
-- GitOps
 
 ## Configuration
 
@@ -229,10 +212,12 @@ FRONTEND_TAG=latest
 ## Scripts
 
 Repository root:
+
 - `setup-dockerhub.sh` - Configure Docker Hub username
 - `build-and-push.sh` - Build and push images to Docker Hub
 
 App directory:
+
 - `build-images.sh` - Build images locally (old method, for manual NAS builds)
 - `generate-pin.js` - Generate SHA-256 PIN hash
 
@@ -289,11 +274,13 @@ git push
 ### Can't Access Web UI
 
 **Check port:**
+
 ```bash
 netstat -tuln | grep 7890
 ```
 
 **Try different port in `docker-compose.yml`:**
+
 ```yaml
 ports:
   - "8080:80"  # Change 7890 to 8080
@@ -304,17 +291,20 @@ ports:
 ### No Updates Showing
 
 **Check Diun network:**
+
 ```bash
 docker network inspect portainer-updater-net
 # Should show both Diun and backend containers
 ```
 
 **Check backend logs:**
+
 ```bash
 docker logs portainer-updater-backend | grep webhook
 ```
 
 **Verify image names match:**
+
 ```bash
 # What Diun sees:
 docker logs diun | grep "image:"
@@ -328,10 +318,12 @@ cat /volume1/docker/portainer-updater/config.json | grep "image"
 ### Images Not Updating
 
 **Force pull in Portainer:**
+
 - Stacks → portainer-updater → Pull and redeploy
 - Enable "Re-pull images"
 
 **Or use image digest:**
+
 ```yaml
 image: username/portainer-updater@sha256:abc123...
 ```
@@ -339,12 +331,14 @@ image: username/portainer-updater@sha256:abc123...
 ### Build Fails
 
 **Check Docker version:**
+
 ```bash
 docker --version
 # Need 20.10+
 ```
 
 **Check disk space:**
+
 ```bash
 df -h
 # Need 2GB+ free
@@ -425,6 +419,7 @@ docker start portainer-updater-backend
 ### Automated Backup
 
 Use Synology Task Scheduler or cron:
+
 ```bash
 0 2 * * * docker stop portainer-updater-backend && \
           cp /volume1/docker/portainer-updater/data/updates.db \

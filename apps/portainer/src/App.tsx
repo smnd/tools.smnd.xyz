@@ -145,7 +145,12 @@ function App() {
 
   // Load config on mount
   useEffect(() => {
-    fetch('/config.json')
+    fetch(`/config.json?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    })
       .then(res => {
         if (!res.ok) {
           throw new Error('Config file not found. Make sure config.json exists in the public folder.')

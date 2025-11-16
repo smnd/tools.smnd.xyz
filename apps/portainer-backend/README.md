@@ -13,7 +13,7 @@ Backend service for the Portainer Updater app that integrates with [Diun](https:
 
 ## Architecture
 
-```
+``` md
 Diun → Backend API → SQLite Database
          ↓
     Frontend Web UI
@@ -30,18 +30,22 @@ Diun → Backend API → SQLite Database
 ## API Endpoints
 
 ### Diun Integration
+
 - `POST /api/diun/webhook` - Receive webhook notifications from Diun (no auth)
 
 ### Updates Management
+
 - `GET /api/updates` - List all pending updates (requires PIN)
 - `POST /api/updates/:id/trigger` - Trigger single update (requires PIN)
 - `POST /api/updates/batch` - Trigger multiple updates (requires PIN)
 - `DELETE /api/updates/:id` - Dismiss an update (requires PIN)
 
 ### History
+
 - `GET /api/history?page=1&pageSize=20` - Get update history with pagination (requires PIN)
 
 ### Health Check
+
 - `GET /health` - Health check endpoint
 
 ## Configuration
@@ -75,6 +79,7 @@ The backend reads the same `config.json` as the frontend:
 ```
 
 **Important Fields for Backend:**
+
 - `image` - Used to match Diun notifications to webhook configurations
 - `container_name` - Used for more specific matching (optional)
 - `stack` - Used to group containers for batch operations (optional)
@@ -83,7 +88,9 @@ The backend reads the same `config.json` as the frontend:
 ## Database Schema
 
 ### updates Table
+
 Stores detected updates from Diun:
+
 ```sql
 CREATE TABLE updates (
   id INTEGER PRIMARY KEY,
@@ -101,7 +108,9 @@ CREATE TABLE updates (
 ```
 
 ### update_history Table
+
 Audit log of triggered updates:
+
 ```sql
 CREATE TABLE update_history (
   id INTEGER PRIMARY KEY,

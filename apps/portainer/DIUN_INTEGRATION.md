@@ -15,7 +15,7 @@ With Diun integration, your workflow becomes:
 
 ## Architecture
 
-```
+``` md
 ┌──────────┐    webhook     ┌──────────┐    stores    ┌──────────┐
 │   Diun   ├───────────────>│ Backend  ├─────────────>│ SQLite   │
 └──────────┘                └────┬─────┘              └──────────┘
@@ -95,12 +95,13 @@ docker-compose up -d
 ```
 
 This deploys:
+
 - `portainer-updater-backend` - Backend service on port 3000 (internal)
 - `portainer-updater` - Frontend on port 7890 (exposed)
 
 ### Directory Structure on Your Server
 
-```
+```md
 /volume2/docker/portainer-updater/
 ├── config.json        # Shared configuration
 └── data/              # SQLite database (created automatically)
@@ -268,19 +269,26 @@ Click **Dismiss** to remove an update from the pending list without updating.
 **Problem**: Diun is running but updates don't show in web UI.
 
 **Solutions**:
+
 1. Check Diun logs for webhook send errors:
+
    ```bash
    docker logs diun
    ```
+
 2. Verify Diun and backend are on same network:
+
    ```bash
    docker inspect diun | grep Networks
    docker inspect portainer-updater-backend | grep Networks
    ```
+
 3. Check backend logs for webhook receipts:
+
    ```bash
    docker logs portainer-updater-backend
    ```
+
 4. Verify `image` field in `config.json` exactly matches image name in Diun notification
 
 ### Updates not triggering
@@ -288,16 +296,21 @@ Click **Dismiss** to remove an update from the pending list without updating.
 **Problem**: Click "Update" but nothing happens.
 
 **Solutions**:
+
 1. Check backend logs for trigger errors:
+
    ```bash
    docker logs portainer-updater-backend | grep trigger
    ```
+
 2. Verify Portainer webhook URL is correct:
    - Test manually: `curl -X POST https://your-portainer/api/webhooks/xxx`
 3. Check Portainer logs for webhook receipt:
+
    ```bash
    docker logs portainer
    ```
+
 4. Verify webhook is enabled in Portainer UI
 
 ### Backend won't start
@@ -305,15 +318,21 @@ Click **Dismiss** to remove an update from the pending list without updating.
 **Problem**: `portainer-updater-backend` container keeps restarting.
 
 **Solutions**:
+
 1. Check logs for errors:
+
    ```bash
    docker logs portainer-updater-backend
    ```
+
 2. Verify `config.json` exists and is valid JSON:
+
    ```bash
    cat /volume2/docker/portainer-updater/config.json | jq
    ```
+
 3. Ensure data directory is writable:
+
    ```bash
    ls -la /volume2/docker/portainer-updater/data
    chmod 755 /volume2/docker/portainer-updater/data
@@ -324,16 +343,20 @@ Click **Dismiss** to remove an update from the pending list without updating.
 **Problem**: Diun detects update but backend can't match to webhook.
 
 **Solution**: Check exact image name in Diun notification vs config.json:
+
 1. Look at Diun logs for the exact image name:
+
    ```
    image: library/nginx:latest
    ```
+
 2. Use the exact same name in config.json:
    ```json
    "image": "library/nginx:latest"
    ```
 
 Common patterns:
+
 - Docker Hub official images: `library/nginx:latest` or `nginx:latest`
 - GHCR images: `ghcr.io/owner/repo:tag`
 - Private registry: `registry.example.com/image:tag`
@@ -343,6 +366,7 @@ Common patterns:
 **Problem**: Updates show for wrong containers or too many containers.
 
 **Solution**: Add `container_name` to config.json for specific matching:
+
 ```json
 {
   "image": "nginx:latest",
@@ -352,28 +376,6 @@ Common patterns:
 ```
 
 ## Advanced Configuration
-
-### Multiple Diun Instances
-
-If you run multiple Diun instances (different registries), they can all send to the same backend:
-
-```yaml
-# diun-docker.yml
-environment:
-  - DIUN_NOTIF_WEBHOOK_ENDPOINT=http://portainer-updater-backend:3000/api/diun/webhook
-
-# diun-ghcr.yml
-environment:
-  - DIUN_NOTIF_WEBHOOK_ENDPOINT=http://portainer-updater-backend:3000/api/diun/webhook
-```
-
-The backend will match based on image name regardless of source.
-
-### Auto-Update (Experimental)
-
-You can modify Diun to trigger updates automatically instead of storing them:
-
-**NOT RECOMMENDED** - Defeats purpose of manual approval, but possible for non-critical containers.
 
 ### Backup Database
 
@@ -396,6 +398,7 @@ Or use automated backups with cron.
 ### Custom Update Logic
 
 The backend is extensible. You can modify:
+
 - `src/routes/updates.ts` - Add custom validation before triggering
 - `src/models/database.ts` - Add custom fields to database
 - `src/routes/diun.ts` - Add filtering logic for which updates to store
@@ -403,12 +406,14 @@ The backend is extensible. You can modify:
 ## Comparison: With vs Without Diun
 
 ### Without Diun (Original)
+
 - ❌ No automatic update detection
 - ❌ Must manually trigger webhooks
 - ✅ Simple setup
 - ✅ No additional containers
 
 ### With Diun Integration
+
 - ✅ Automatic update detection
 - ✅ See all pending updates at a glance
 - ✅ Batch update multiple containers
@@ -417,17 +422,10 @@ The backend is extensible. You can modify:
 - ❌ Requires Diun + backend
 - ❌ More complex setup
 
-## Next Steps
-
-1. Configure more containers in `config.json`
-2. Set up Diun to watch your registries
-3. Test batch updates on a stack
-4. Review update history
-5. Set up database backups
-
 ## Support
 
 For issues, check:
+
 - Backend logs: `docker logs portainer-updater-backend`
 - Frontend logs: `docker logs portainer-updater`
 - Diun logs: `docker logs diun`
