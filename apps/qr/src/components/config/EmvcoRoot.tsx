@@ -304,9 +304,9 @@ function nextSequentialId(schemes?: { id: number }[]) {
 }
 
 function nextSubTagId(tags: { id: string }[]): string {
-  if (!tags || tags.length === 0) return '00'
+  if (!tags || tags.length === 0) return '01'
   const max = tags.reduce((acc, t) => Math.max(acc, parseInt(t.id, 10) || 0), -1)
-  const next = Math.min(99, Math.max(0, max + 1))
+  const next = Math.min(8, Math.max(0, max + 1))
   return next.toString().padStart(2, '0')
 }
 
