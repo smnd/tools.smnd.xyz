@@ -612,9 +612,9 @@ function App() {
                                 <h3 className="text-base font-medium text-gray-900 dark:text-white truncate">
                                   {group.stack}
                                 </h3>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {/* <p className="text-xs text-gray-500 dark:text-gray-400">
                                   {group.webhooks.length} webhook{group.webhooks.length !== 1 ? 's' : ''}
-                                </p>
+                                </p> */}
                               </div>
                             </button>
                           </div>
