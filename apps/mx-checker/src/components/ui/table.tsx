@@ -3,7 +3,7 @@
  * Displays MX check results in a table format
  */
 
-import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
+import { CheckCircle2, XCircle, AlertCircle, SearchX, WifiOff } from 'lucide-react'
 import type { DomainResult } from '@/lib/mx-checker'
 
 interface TableProps {
@@ -18,6 +18,12 @@ function StatusIcon({ status }: { status: DomainResult['has_mx_record'] }) {
   }
   if (status === 'No') {
     return <XCircle className="w-5 h-5 text-red-600 dark:text-red-500" />
+  }
+  if (status === 'Not found') {
+    return <SearchX className="w-5 h-5 text-red-600 dark:text-red-500" />
+  }
+  if (status === 'Error') {
+    return <WifiOff className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
   }
   return <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
 }
@@ -38,7 +44,25 @@ function StatusBadge({ status }: { status: DomainResult['has_mx_record'] }) {
     return (
       <span className={`${baseClasses} bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300`}>
         <StatusIcon status={status} />
-        Invalid
+        No MX
+      </span>
+    )
+  }
+
+  if (status === 'Not found') {
+    return (
+      <span className={`${baseClasses} bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300`}>
+        <StatusIcon status={status} />
+        Not Found
+      </span>
+    )
+  }
+
+  if (status === 'Error') {
+    return (
+      <span className={`${baseClasses} bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300`}>
+        <StatusIcon status={status} />
+        Error
       </span>
     )
   }

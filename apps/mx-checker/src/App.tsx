@@ -120,8 +120,8 @@ function App() {
   }
 
   const validCount = results.filter(r => r.has_mx_record === 'Yes').length
-  const invalidCount = results.filter(r => r.has_mx_record === 'No').length
-  const errorCount = results.filter(r => r.has_mx_record === 'Invalid domain').length
+  const invalidCount = results.filter(r => r.has_mx_record === 'No' || r.has_mx_record === 'Not found').length
+  const errorCount = results.filter(r => r.has_mx_record === 'Error' || r.has_mx_record === 'Invalid domain').length
 
   // For CSV with more than 5 results, only show first 5 in table
   const shouldLimitTable = selectedFile !== null && results.length > 5
